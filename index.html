@@ -190,7 +190,7 @@
             
             <h1 class="text-3xl sm:text-4xl font-bold text-white tracking-[0.3em] uppercase drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">Game Timer</h1>
             <div class="mt-6 px-4 py-1.5 rounded-full bg-black/40 border border-white/10 text-emerald-400 font-mono text-xs tracking-widest shadow-[0_0_10px_rgba(16,185,129,0.2)]">
-                v1.7.0
+                v1.8.0
             </div>
         </div>
     </div>
@@ -310,7 +310,7 @@
             
             <div class="px-6 py-4 border-b border-white/10 flex justify-between items-center flex-shrink-0 bg-white/5">
                 <h2 class="text-xl font-semibold text-white">Einstellungen</h2>
-                <span class="text-[10px] text-emerald-400 font-mono tracking-widest px-2 py-1 rounded bg-black/20">v1.7.0</span>
+                <span class="text-[10px] text-emerald-400 font-mono tracking-widest px-2 py-1 rounded bg-black/20">v1.8.0</span>
             </div>
 
             <div class="px-6 py-6 overflow-y-auto hide-scrollbar flex-1">
@@ -432,7 +432,6 @@
             const bootScreen = document.getElementById('boot-screen');
             const bootContent = document.getElementById('boot-content');
             
-            // Hält den Bootscreen für 1.8 Sekunden, dann faded er weich aus
             setTimeout(() => {
                 bootContent.style.transform = 'scale(1.1)';
                 bootContent.style.opacity = '0';
@@ -502,7 +501,7 @@
         const btnAddSec = document.getElementById('btn-add-sec');
         const btnsQuickSelect = document.querySelectorAll('.btn-quick-select');
 
-        let totalSeconds = 3 * 60; // 3 Minuten Standard
+        let totalSeconds = 3 * 60; 
         let remainingSeconds = totalSeconds;
         let exactRemainingMs = totalSeconds * 1000;
         let isRunning = false;
@@ -510,96 +509,96 @@
         let settingsOpen = false;
         let isAlarming = false;
         let alarmLoopId = null; 
-        let nextHeartbeatMs = 0;
+        let nextHeartbeatMs = 0; // Exakt synchronisierter Tracker
         let activeAlarmIndex = null;
 
         let audioCtx = null;
         let activeAudioNodes = [];
 
+        // Hinzugefügte 'fx' Eigenschaft für Hall/Echo Effekte
         const soundPresets = [
             { target: "system", name: "Kein Ton", layers: [] },
             
-            // 20 MINUTEN SOUNDS (Chill)
-            { target: "min", name: "Klangschale 1", layers: [{ type: "sine", freq: 698.46, dur: 2.0, vol: 0.4 }] },
-            { target: "min", name: "Klangschale 2", layers: [{ type: "sine", freq: 1047.69, dur: 2.0, vol: 0.3 }] },
-            { target: "min", name: "Harfe 1", layers: [{ type: "triangle", freq: 523.25, dur: 1.0, vol: 0.3 }] },
-            { target: "min", name: "Harfe 2", layers: [{ type: "triangle", freq: 659.25, dur: 1.5, vol: 0.3 }] },
-            { target: "min", name: "Wald", layers: [{ type: "sine", freq: 523.25, dur: 0.4, vol: 0.2, delay: 0 }, { type: "sine", freq: 659.25, dur: 0.4, vol: 0.2, delay: 0.2 }] },
-            { target: "min", name: "Tropfen", layers: [{ type: "sine", freq: 600, dur: 0.15, vol: 0.4, slide: 400 }] },
-            { target: "min", name: "Warmer Akkord 1", layers: [{ type: "sine", freq: 523.25, dur: 1.5, vol: 0.2 }, { type: "sine", freq: 659.25, dur: 1.5, vol: 0.2 }] },
-            { target: "min", name: "Warmer Akkord 2", layers: [{ type: "sine", freq: 783.99, dur: 1.5, vol: 0.2 }, { type: "sine", freq: 1046.50, dur: 1.5, vol: 0.2 }] },
-            { target: "min", name: "Erwachen", layers: [{ type: "sine", freq: 440, dur: 1.0, vol: 0.2 }, { type: "sine", freq: 554.37, dur: 1.0, vol: 0.2, slide: 50 }] },
-            { target: "min", name: "Windspiel 1", layers: [{ type: "triangle", freq: 1046.50, dur: 0.8, vol: 0.1 }] },
-            { target: "min", name: "Windspiel 2", layers: [{ type: "triangle", freq: 1318.51, dur: 0.8, vol: 0.1 }] },
-            { target: "min", name: "Gong", layers: [{ type: "sine", freq: 220, dur: 2.5, vol: 0.5, slide: -5 }] },
-            { target: "min", name: "Pad 1", layers: [{ type: "sine", freq: 600, dur: 2.0, vol: 0.2 }] },
-            { target: "min", name: "Pad 2", layers: [{ type: "sine", freq: 400, dur: 2.0, vol: 0.2 }] },
-            { target: "min", name: "Glocke 1", layers: [{ type: "sine", freq: 1567.98, dur: 1.5, vol: 0.3 }] },
-            { target: "min", name: "Glocke 2", layers: [{ type: "sine", freq: 2093.00, dur: 1.5, vol: 0.2 }] },
-            { target: "min", name: "Ruhe", layers: [{ type: "sine", freq: 329.63, dur: 1.0, vol: 0.3 }] },
-            { target: "min", name: "Atem", layers: [{ type: "sine", freq: 200, dur: 1.5, vol: 0.2, slide: -50 }] },
-            { target: "min", name: "Zen", layers: [{ type: "sine", freq: 880, dur: 2.0, vol: 0.2 }] },
-            { target: "min", name: "Flöte", layers: [{ type: "triangle", freq: 1046.50, dur: 1.0, vol: 0.2, slide: -20 }] },
+            // 20 MINUTEN SOUNDS (Chill) - Mit tiefem Hall/Echo
+            { target: "min", name: "Klangschale 1", fx: { delayTime: 0.4, feedback: 0.5, mix: 0.5 }, layers: [{ type: "sine", freq: 698.46, dur: 2.0, vol: 0.4 }] },
+            { target: "min", name: "Klangschale 2", fx: { delayTime: 0.5, feedback: 0.6, mix: 0.6 }, layers: [{ type: "sine", freq: 1047.69, dur: 2.0, vol: 0.3 }] },
+            { target: "min", name: "Harfe 1", fx: { delayTime: 0.3, feedback: 0.4, mix: 0.4 }, layers: [{ type: "triangle", freq: 523.25, dur: 1.0, vol: 0.4 }] },
+            { target: "min", name: "Harfe 2", fx: { delayTime: 0.3, feedback: 0.4, mix: 0.4 }, layers: [{ type: "triangle", freq: 659.25, dur: 1.5, vol: 0.4 }] },
+            { target: "min", name: "Wald", fx: { delayTime: 0.25, feedback: 0.3, mix: 0.3 }, layers: [{ type: "sine", freq: 523.25, dur: 0.4, vol: 0.3, delay: 0 }, { type: "sine", freq: 659.25, dur: 0.4, vol: 0.2, delay: 0.2 }] },
+            { target: "min", name: "Tropfen", fx: { delayTime: 0.2, feedback: 0.5, mix: 0.5 }, layers: [{ type: "sine", freq: 600, dur: 0.15, vol: 0.5, slide: 400 }] },
+            { target: "min", name: "Warmer Akkord 1", fx: { delayTime: 0.4, feedback: 0.2, mix: 0.3 }, layers: [{ type: "sine", freq: 523.25, dur: 1.5, vol: 0.3 }, { type: "sine", freq: 659.25, dur: 1.5, vol: 0.2 }] },
+            { target: "min", name: "Warmer Akkord 2", fx: { delayTime: 0.4, feedback: 0.2, mix: 0.3 }, layers: [{ type: "sine", freq: 783.99, dur: 1.5, vol: 0.3 }, { type: "sine", freq: 1046.50, dur: 1.5, vol: 0.2 }] },
+            { target: "min", name: "Erwachen", fx: { delayTime: 0.3, feedback: 0.3, mix: 0.4 }, layers: [{ type: "sine", freq: 440, dur: 1.0, vol: 0.3 }, { type: "sine", freq: 554.37, dur: 1.0, vol: 0.2, slide: 50 }] },
+            { target: "min", name: "Windspiel 1", fx: { delayTime: 0.15, feedback: 0.5, mix: 0.4 }, layers: [{ type: "triangle", freq: 1046.50, dur: 0.8, vol: 0.2 }] },
+            { target: "min", name: "Windspiel 2", fx: { delayTime: 0.15, feedback: 0.5, mix: 0.4 }, layers: [{ type: "triangle", freq: 1318.51, dur: 0.8, vol: 0.2 }] },
+            { target: "min", name: "Gong", fx: { delayTime: 0.5, feedback: 0.6, mix: 0.6 }, layers: [{ type: "sine", freq: 220, dur: 2.5, vol: 0.6, slide: -5 }] },
+            { target: "min", name: "Pad 1", layers: [{ type: "sine", freq: 600, dur: 2.0, vol: 0.3 }] },
+            { target: "min", name: "Pad 2", layers: [{ type: "sine", freq: 400, dur: 2.0, vol: 0.3 }] },
+            { target: "min", name: "Glocke 1", fx: { delayTime: 0.3, feedback: 0.4, mix: 0.5 }, layers: [{ type: "sine", freq: 1567.98, dur: 1.5, vol: 0.4 }] },
+            { target: "min", name: "Glocke 2", fx: { delayTime: 0.3, feedback: 0.4, mix: 0.5 }, layers: [{ type: "sine", freq: 2093.00, dur: 1.5, vol: 0.3 }] },
+            { target: "min", name: "Ruhe", layers: [{ type: "sine", freq: 329.63, dur: 1.0, vol: 0.4 }] },
+            { target: "min", name: "Atem", layers: [{ type: "sine", freq: 200, dur: 1.5, vol: 0.3, slide: -50 }] },
+            { target: "min", name: "Zen", fx: { delayTime: 0.4, feedback: 0.3, mix: 0.4 }, layers: [{ type: "sine", freq: 880, dur: 2.0, vol: 0.3 }] },
+            { target: "min", name: "Flöte", fx: { delayTime: 0.25, feedback: 0.2, mix: 0.3 }, layers: [{ type: "triangle", freq: 1046.50, dur: 1.0, vol: 0.3, slide: -20 }] },
 
             // 20 30s-SOUNDS (Anspannung)
-            { target: "30s", name: "Echo", layers: [{ type: "sine", freq: 600, dur: 0.2, vol: 0.3, delay: 0 }, { type: "sine", freq: 600, dur: 0.2, vol: 0.1, delay: 0.2 }] },
-            { target: "30s", name: "Ding-Dong", layers: [{ type: "sine", freq: 783.99, dur: 0.6, vol: 0.3, delay: 0 }, { type: "sine", freq: 523.25, dur: 1.0, vol: 0.4, delay: 0.3 }] },
-            { target: "30s", name: "Doppel-Ping", layers: [{ type: "sine", freq: 880, dur: 0.2, vol: 0.3, delay: 0 }, { type: "sine", freq: 880, dur: 0.4, vol: 0.3, delay: 0.2 }] },
-            { target: "30s", name: "Mystisches Pad", layers: [{ type: "sine", freq: 600, dur: 2.0, vol: 0.3 }, { type: "sine", freq: 604, dur: 2.0, vol: 0.3 }] },
-            { target: "30s", name: "Sonar", layers: [{ type: "sine", freq: 1200, dur: 0.8, vol: 0.4 }] },
-            { target: "30s", name: "Marimba Riff", layers: [{ type: "triangle", freq: 440, dur: 0.15, vol: 0.4, delay: 0 }, { type: "triangle", freq: 554.37, dur: 0.15, vol: 0.4, delay: 0.15 }] },
-            { target: "30s", name: "Xylophon", layers: [{ type: "triangle", freq: 1046.50, dur: 0.15, vol: 0.4 }] },
-            { target: "30s", name: "Achtung", layers: [{ type: "sawtooth", freq: 440, dur: 0.8, vol: 0.15 }] },
-            { target: "30s", name: "Radar", layers: [{ type: "sine", freq: 800, dur: 0.5, vol: 0.3, slide: -400 }] },
-            { target: "30s", name: "Dissonanz 1", layers: [{ type: "square", freq: 440, dur: 0.1, vol: 0.2, delay: 0 }] },
-            { target: "30s", name: "Dissonanz 2", layers: [{ type: "square", freq: 466.16, dur: 0.1, vol: 0.2, delay: 0.15 }] },
-            { target: "30s", name: "Warn-Klick", layers: [{ type: "square", freq: 1200, dur: 0.02, vol: 0.2 }, { type: "triangle", freq: 600, dur: 0.1, vol: 0.3 }] },
-            { target: "30s", name: "Tiefes Horn", layers: [{ type: "sawtooth", freq: 220, dur: 1.0, vol: 0.3 }] },
-            { target: "30s", name: "Vibraphon", layers: [{ type: "sine", freq: 880, dur: 1.0, vol: 0.3 }] },
-            { target: "30s", name: "Schwebung", layers: [{ type: "sine", freq: 440, dur: 1.5, vol: 0.3 }, { type: "sine", freq: 444, dur: 1.5, vol: 0.3 }] },
-            { target: "30s", name: "Glocke Düster", layers: [{ type: "sine", freq: 523.25, dur: 1.5, vol: 0.3 }] },
-            { target: "30s", name: "Puls 1", layers: [{ type: "square", freq: 600, dur: 0.2, vol: 0.2 }] },
-            { target: "30s", name: "Puls 2", layers: [{ type: "square", freq: 800, dur: 0.2, vol: 0.2 }] },
-            { target: "30s", name: "Staccato", layers: [{ type: "triangle", freq: 1000, dur: 0.1, vol: 0.3 }] },
-            { target: "30s", name: "Sog", layers: [{ type: "sine", freq: 400, dur: 1.0, vol: 0.3, slide: 200 }] },
+            { target: "30s", name: "Echo", fx: { delayTime: 0.2, feedback: 0.6, mix: 0.6 }, layers: [{ type: "sine", freq: 600, dur: 0.2, vol: 0.4, delay: 0 }] },
+            { target: "30s", name: "Ding-Dong", fx: { delayTime: 0.3, feedback: 0.2, mix: 0.3 }, layers: [{ type: "sine", freq: 783.99, dur: 0.6, vol: 0.4, delay: 0 }, { type: "sine", freq: 523.25, dur: 1.0, vol: 0.5, delay: 0.3 }] },
+            { target: "30s", name: "Doppel-Ping", fx: { delayTime: 0.15, feedback: 0.3, mix: 0.3 }, layers: [{ type: "sine", freq: 880, dur: 0.2, vol: 0.4, delay: 0 }, { type: "sine", freq: 880, dur: 0.4, vol: 0.3, delay: 0.2 }] },
+            { target: "30s", name: "Mystisches Pad", fx: { delayTime: 0.4, feedback: 0.4, mix: 0.4 }, layers: [{ type: "sine", freq: 600, dur: 2.0, vol: 0.4 }, { type: "sine", freq: 604, dur: 2.0, vol: 0.3 }] },
+            { target: "30s", name: "Sonar", fx: { delayTime: 0.5, feedback: 0.4, mix: 0.5 }, layers: [{ type: "sine", freq: 1200, dur: 0.8, vol: 0.5 }] },
+            { target: "30s", name: "Marimba Riff", layers: [{ type: "triangle", freq: 440, dur: 0.15, vol: 0.5, delay: 0 }, { type: "triangle", freq: 554.37, dur: 0.15, vol: 0.4, delay: 0.15 }] },
+            { target: "30s", name: "Xylophon", fx: { delayTime: 0.1, feedback: 0.2, mix: 0.2 }, layers: [{ type: "triangle", freq: 1046.50, dur: 0.15, vol: 0.5 }] },
+            { target: "30s", name: "Achtung", layers: [{ type: "sawtooth", freq: 440, dur: 0.8, vol: 0.2 }] },
+            { target: "30s", name: "Radar", fx: { delayTime: 0.3, feedback: 0.4, mix: 0.4 }, layers: [{ type: "sine", freq: 800, dur: 0.5, vol: 0.4, slide: -400 }] },
+            { target: "30s", name: "Dissonanz 1", layers: [{ type: "square", freq: 440, dur: 0.1, vol: 0.3, delay: 0 }] },
+            { target: "30s", name: "Dissonanz 2", layers: [{ type: "square", freq: 466.16, dur: 0.1, vol: 0.3, delay: 0.15 }] },
+            { target: "30s", name: "Warn-Klick", layers: [{ type: "square", freq: 1200, dur: 0.02, vol: 0.3 }, { type: "triangle", freq: 600, dur: 0.1, vol: 0.4 }] },
+            { target: "30s", name: "Tiefes Horn", layers: [{ type: "sawtooth", freq: 220, dur: 1.0, vol: 0.4 }] },
+            { target: "30s", name: "Vibraphon", fx: { delayTime: 0.4, feedback: 0.4, mix: 0.4 }, layers: [{ type: "sine", freq: 880, dur: 1.0, vol: 0.4 }] },
+            { target: "30s", name: "Schwebung", layers: [{ type: "sine", freq: 440, dur: 1.5, vol: 0.4 }, { type: "sine", freq: 444, dur: 1.5, vol: 0.3 }] },
+            { target: "30s", name: "Glocke Düster", fx: { delayTime: 0.3, feedback: 0.3, mix: 0.4 }, layers: [{ type: "sine", freq: 523.25, dur: 1.5, vol: 0.4 }] },
+            { target: "30s", name: "Puls 1", layers: [{ type: "square", freq: 600, dur: 0.2, vol: 0.3 }] },
+            { target: "30s", name: "Puls 2", layers: [{ type: "square", freq: 800, dur: 0.2, vol: 0.3 }] },
+            { target: "30s", name: "Staccato", fx: { delayTime: 0.15, feedback: 0.5, mix: 0.5 }, layers: [{ type: "triangle", freq: 1000, dur: 0.1, vol: 0.4 }] },
+            { target: "30s", name: "Sog", layers: [{ type: "sine", freq: 400, dur: 1.0, vol: 0.4, slide: 200 }] },
 
             // 20 ALARM SOUNDS (Eskalation)
-            { target: "alarm", name: "Orchester-Hit", layers: [{ type: "sawtooth", freq: 261.63, dur: 0.5, vol: 0.2 }, { type: "sawtooth", freq: 392.00, dur: 0.5, vol: 0.2 }, { type: "sawtooth", freq: 523.25, dur: 0.5, vol: 0.2 }] },
+            { target: "alarm", name: "Orchester-Hit", fx: { delayTime: 0.2, feedback: 0.2, mix: 0.3 }, layers: [{ type: "sawtooth", freq: 261.63, dur: 0.5, vol: 0.3 }, { type: "sawtooth", freq: 392.00, dur: 0.5, vol: 0.3 }, { type: "sawtooth", freq: 523.25, dur: 0.5, vol: 0.3 }] },
             { target: "alarm", name: "Retro Mond (Kurz)", layers: [
-                { type: "square", freq: 659.25, dur: 0.15, vol: 0.2, delay: 0.0 }, { type: "square", freq: 783.99, dur: 0.15, vol: 0.2, delay: 0.2 }, { type: "square", freq: 587.33, dur: 0.3, vol: 0.2, delay: 0.4 }, { type: "square", freq: 523.25, dur: 0.15, vol: 0.2, delay: 0.8 }, { type: "square", freq: 587.33, dur: 0.15, vol: 0.2, delay: 1.0 }, { type: "square", freq: 659.25, dur: 0.15, vol: 0.2, delay: 1.2 }, { type: "square", freq: 783.99, dur: 0.15, vol: 0.2, delay: 1.4 }, { type: "square", freq: 587.33, dur: 0.6, vol: 0.2, delay: 1.6 },
-                { type: "triangle", freq: 220, dur: 0.3, vol: 0.2, delay: 0.0 }, { type: "triangle", freq: 196, dur: 0.3, vol: 0.2, delay: 0.4 }, { type: "triangle", freq: 174.61, dur: 0.3, vol: 0.2, delay: 0.8 }, { type: "triangle", freq: 196, dur: 0.3, vol: 0.2, delay: 1.2 },
-                { type: "square", freq: 659.25, dur: 0.15, vol: 0.2, delay: 2.4 }, { type: "square", freq: 783.99, dur: 0.15, vol: 0.2, delay: 2.6 }, { type: "square", freq: 880.00, dur: 0.3, vol: 0.2, delay: 2.8 }, { type: "square", freq: 783.99, dur: 0.15, vol: 0.2, delay: 3.2 }, { type: "square", freq: 659.25, dur: 0.15, vol: 0.2, delay: 3.4 }, { type: "square", freq: 587.33, dur: 0.15, vol: 0.2, delay: 3.6 }, { type: "square", freq: 523.25, dur: 0.6, vol: 0.2, delay: 3.8 }
+                { type: "square", freq: 659.25, dur: 0.15, vol: 0.25, delay: 0.0 }, { type: "square", freq: 783.99, dur: 0.15, vol: 0.25, delay: 0.2 }, { type: "square", freq: 587.33, dur: 0.3, vol: 0.25, delay: 0.4 }, { type: "square", freq: 523.25, dur: 0.15, vol: 0.25, delay: 0.8 }, { type: "square", freq: 587.33, dur: 0.15, vol: 0.25, delay: 1.0 }, { type: "square", freq: 659.25, dur: 0.15, vol: 0.25, delay: 1.2 }, { type: "square", freq: 783.99, dur: 0.15, vol: 0.25, delay: 1.4 }, { type: "square", freq: 587.33, dur: 0.6, vol: 0.25, delay: 1.6 },
+                { type: "triangle", freq: 220, dur: 0.3, vol: 0.3, delay: 0.0 }, { type: "triangle", freq: 196, dur: 0.3, vol: 0.3, delay: 0.4 }, { type: "triangle", freq: 174.61, dur: 0.3, vol: 0.3, delay: 0.8 }, { type: "triangle", freq: 196, dur: 0.3, vol: 0.3, delay: 1.2 },
+                { type: "square", freq: 659.25, dur: 0.15, vol: 0.25, delay: 2.4 }, { type: "square", freq: 783.99, dur: 0.15, vol: 0.25, delay: 2.6 }, { type: "square", freq: 880.00, dur: 0.3, vol: 0.25, delay: 2.8 }, { type: "square", freq: 783.99, dur: 0.15, vol: 0.25, delay: 3.2 }, { type: "square", freq: 659.25, dur: 0.15, vol: 0.25, delay: 3.4 }, { type: "square", freq: 587.33, dur: 0.15, vol: 0.25, delay: 3.6 }, { type: "square", freq: 523.25, dur: 0.6, vol: 0.25, delay: 3.8 }
             ]},
-            { target: "alarm", name: "Episches Horn", layers: [{ type: "sawtooth", freq: 220, dur: 1.5, vol: 0.3, slide: -10 }] },
-            { target: "alarm", name: "Siegesfanfare", layers: [{ type: "square", freq: 392.00, dur: 0.15, vol: 0.2, delay: 0 }, { type: "square", freq: 523.25, dur: 0.15, vol: 0.2, delay: 0.15 }] },
-            { target: "alarm", name: "Retro Level Up", layers: [{ type: "square", freq: 523.25, dur: 0.1, vol: 0.2, delay: 0 }, { type: "square", freq: 659.25, dur: 0.1, vol: 0.2, delay: 0.1 }, { type: "square", freq: 783.99, dur: 0.1, vol: 0.2, delay: 0.2 }, { type: "square", freq: 1046.50, dur: 0.4, vol: 0.2, delay: 0.3 }] },
-            { target: "alarm", name: "1-Up", layers: [{ type: "square", freq: 1318.51, dur: 0.1, vol: 0.2, delay: 0 }, { type: "square", freq: 1567.98, dur: 0.1, vol: 0.2, delay: 0.1 }, { type: "square", freq: 2093.00, dur: 0.3, vol: 0.2, delay: 0.2 }] },
-            { target: "alarm", name: "Münze", layers: [{ type: "square", freq: 987.77, dur: 0.1, vol: 0.2, delay: 0 }, { type: "square", freq: 1318.51, dur: 0.4, vol: 0.2, delay: 0.1 }] },
-            { target: "alarm", name: "Polizei Sirene", layers: [{ type: "sine", freq: 700, dur: 0.4, vol: 0.3, slide: 300 }, { type: "sine", freq: 1000, dur: 0.4, vol: 0.3, slide: -300, delay: 0.4 }] },
-            { target: "alarm", name: "Auto Alarm", layers: [{ type: "sawtooth", freq: 800, dur: 0.2, vol: 0.3, slide: -200 }, { type: "sawtooth", freq: 600, dur: 0.2, vol: 0.3, slide: 200, delay: 0.2 }] },
-            { target: "alarm", name: "Rasselwecker", layers: [{ type: "square", freq: 1500, dur: 0.05, vol: 0.3, delay: 0 }, { type: "square", freq: 1800, dur: 0.05, vol: 0.3, delay: 0.05 }, { type: "square", freq: 1500, dur: 0.05, vol: 0.3, delay: 0.1 }, { type: "square", freq: 1800, dur: 0.05, vol: 0.3, delay: 0.15 }] },
-            { target: "alarm", name: "Dringend", layers: [{ type: "square", freq: 880, dur: 0.1, vol: 0.2, delay: 0 }, { type: "square", freq: 880, dur: 0.1, vol: 0.2, delay: 0.15 }] },
-            { target: "alarm", name: "Zeit abgelaufen", layers: [{ type: "triangle", freq: 659.25, dur: 0.2, vol: 0.3, delay: 0 }, { type: "triangle", freq: 523.25, dur: 1.0, vol: 0.3, delay: 0.2 }] },
-            { target: "alarm", name: "Dissonante Warnung", layers: [{ type: "sawtooth", freq: 440, dur: 0.6, vol: 0.2 }, { type: "sawtooth", freq: 466.16, dur: 0.6, vol: 0.2 }] },
-            { target: "alarm", name: "Cyber-Wecker", layers: [{ type: "square", freq: 1046.50, dur: 0.05, vol: 0.2, delay: 0 }, { type: "square", freq: 1318.51, dur: 0.4, vol: 0.2, delay: 0.1 }] },
-            { target: "alarm", name: "Gefahr", layers: [{ type: "square", freq: 659.25, dur: 0.1, vol: 0.2, delay: 0 }, { type: "sawtooth", freq: 440, dur: 0.6, vol: 0.3, delay: 0.2 }] },
-            { target: "alarm", name: "Luftangriff", layers: [{ type: "sine", freq: 400, dur: 2.0, vol: 0.4, slide: 400 }] },
-            { target: "alarm", name: "Panik", layers: [{ type: "square", freq: 800, dur: 0.1, vol: 0.3 }, { type: "square", freq: 900, dur: 0.1, vol: 0.3, delay: 0.1 }] },
-            { target: "alarm", name: "Tornado", layers: [{ type: "triangle", freq: 300, dur: 1.5, vol: 0.4, slide: 500 }] },
-            { target: "alarm", name: "Kirchenglocke", layers: [{ type: "sine", freq: 523.25, dur: 2.5, vol: 0.4 }, { type: "sine", freq: 1046.50, dur: 1.5, vol: 0.2 }] },
-            { target: "alarm", name: "Game Over", layers: [{ type: "triangle", freq: 440, dur: 0.3, vol: 0.3, delay: 0 }, { type: "triangle", freq: 392, dur: 0.3, vol: 0.3, delay: 0.3 }, { type: "triangle", freq: 349, dur: 0.8, vol: 0.3, delay: 0.6 }] },
-            { target: "alarm", name: "Buzzer", layers: [{ type: "sawtooth", freq: 150, dur: 1.0, vol: 0.4 }] },
+            { target: "alarm", name: "Episches Horn", fx: { delayTime: 0.3, feedback: 0.4, mix: 0.5 }, layers: [{ type: "sawtooth", freq: 220, dur: 1.5, vol: 0.4, slide: -10 }] },
+            { target: "alarm", name: "Siegesfanfare", fx: { delayTime: 0.15, feedback: 0.2, mix: 0.2 }, layers: [{ type: "square", freq: 392.00, dur: 0.15, vol: 0.3, delay: 0 }, { type: "square", freq: 523.25, dur: 0.15, vol: 0.3, delay: 0.15 }] },
+            { target: "alarm", name: "Retro Level Up", layers: [{ type: "square", freq: 523.25, dur: 0.1, vol: 0.3, delay: 0 }, { type: "square", freq: 659.25, dur: 0.1, vol: 0.3, delay: 0.1 }, { type: "square", freq: 783.99, dur: 0.1, vol: 0.3, delay: 0.2 }, { type: "square", freq: 1046.50, dur: 0.4, vol: 0.3, delay: 0.3 }] },
+            { target: "alarm", name: "1-Up", layers: [{ type: "square", freq: 1318.51, dur: 0.1, vol: 0.3, delay: 0 }, { type: "square", freq: 1567.98, dur: 0.1, vol: 0.3, delay: 0.1 }, { type: "square", freq: 2093.00, dur: 0.3, vol: 0.3, delay: 0.2 }] },
+            { target: "alarm", name: "Münze", layers: [{ type: "square", freq: 987.77, dur: 0.1, vol: 0.3, delay: 0 }, { type: "square", freq: 1318.51, dur: 0.4, vol: 0.3, delay: 0.1 }] },
+            { target: "alarm", name: "Polizei Sirene", layers: [{ type: "sine", freq: 700, dur: 0.4, vol: 0.4, slide: 300 }, { type: "sine", freq: 1000, dur: 0.4, vol: 0.4, slide: -300, delay: 0.4 }] },
+            { target: "alarm", name: "Auto Alarm", layers: [{ type: "sawtooth", freq: 800, dur: 0.2, vol: 0.4, slide: -200 }, { type: "sawtooth", freq: 600, dur: 0.2, vol: 0.4, slide: 200, delay: 0.2 }] },
+            { target: "alarm", name: "Rasselwecker", layers: [{ type: "square", freq: 1500, dur: 0.05, vol: 0.4, delay: 0 }, { type: "square", freq: 1800, dur: 0.05, vol: 0.4, delay: 0.05 }, { type: "square", freq: 1500, dur: 0.05, vol: 0.4, delay: 0.1 }, { type: "square", freq: 1800, dur: 0.05, vol: 0.4, delay: 0.15 }] },
+            { target: "alarm", name: "Dringend", layers: [{ type: "square", freq: 880, dur: 0.1, vol: 0.3, delay: 0 }, { type: "square", freq: 880, dur: 0.1, vol: 0.3, delay: 0.15 }] },
+            { target: "alarm", name: "Zeit abgelaufen", layers: [{ type: "triangle", freq: 659.25, dur: 0.2, vol: 0.4, delay: 0 }, { type: "triangle", freq: 523.25, dur: 1.0, vol: 0.4, delay: 0.2 }] },
+            { target: "alarm", name: "Dissonante Warnung", fx: { delayTime: 0.2, feedback: 0.3, mix: 0.3 }, layers: [{ type: "sawtooth", freq: 440, dur: 0.6, vol: 0.3 }, { type: "sawtooth", freq: 466.16, dur: 0.6, vol: 0.3 }] },
+            { target: "alarm", name: "Cyber-Wecker", layers: [{ type: "square", freq: 1046.50, dur: 0.05, vol: 0.3, delay: 0 }, { type: "square", freq: 1318.51, dur: 0.4, vol: 0.3, delay: 0.1 }] },
+            { target: "alarm", name: "Gefahr", layers: [{ type: "square", freq: 659.25, dur: 0.1, vol: 0.3, delay: 0 }, { type: "sawtooth", freq: 440, dur: 0.6, vol: 0.4, delay: 0.2 }] },
+            { target: "alarm", name: "Luftangriff", layers: [{ type: "sine", freq: 400, dur: 2.0, vol: 0.5, slide: 400 }] },
+            { target: "alarm", name: "Panik", layers: [{ type: "square", freq: 800, dur: 0.1, vol: 0.4 }, { type: "square", freq: 900, dur: 0.1, vol: 0.4, delay: 0.1 }] },
+            { target: "alarm", name: "Tornado", fx: { delayTime: 0.3, feedback: 0.5, mix: 0.5 }, layers: [{ type: "triangle", freq: 300, dur: 1.5, vol: 0.5, slide: 500 }] },
+            { target: "alarm", name: "Kirchenglocke", fx: { delayTime: 0.4, feedback: 0.4, mix: 0.6 }, layers: [{ type: "sine", freq: 523.25, dur: 2.5, vol: 0.5 }, { type: "sine", freq: 1046.50, dur: 1.5, vol: 0.3 }] },
+            { target: "alarm", name: "Game Over", layers: [{ type: "triangle", freq: 440, dur: 0.3, vol: 0.4, delay: 0 }, { type: "triangle", freq: 392, dur: 0.3, vol: 0.4, delay: 0.3 }, { type: "triangle", freq: 349, dur: 0.8, vol: 0.4, delay: 0.6 }] },
+            { target: "alarm", name: "Buzzer", layers: [{ type: "sawtooth", freq: 150, dur: 1.0, vol: 0.5 }] },
             
-            // Spezieller unsichtbarer System-Sound für den Herzschlag
+            // Spezieller System-Sound für den Herzschlag
             { target: "system", name: "Tiefer Herzschlag", layers: [
                 { type: "sine", freq: 45, dur: 0.3, vol: 1.0, slide: -10, delay: 0 }, 
-                { type: "triangle", freq: 120, dur: 0.05, vol: 0.4, delay: 0 },
+                { type: "triangle", freq: 120, dur: 0.05, vol: 0.5, delay: 0 },
                 { type: "sine", freq: 50, dur: 0.3, vol: 0.8, slide: -10, delay: 0.25 },
-                { type: "triangle", freq: 200, dur: 0.05, vol: 0.2, delay: 0.25 }
+                { type: "triangle", freq: 200, dur: 0.05, vol: 0.3, delay: 0.25 }
             ]}
         ];
 
-        // Finde den Index für Default-Einstellungen
         function getIndexByName(name) {
             return soundPresets.findIndex(p => p.name === name);
         }
@@ -703,7 +702,6 @@
                 const container = document.getElementById(`list-sound-${cat.id}`);
                 container.innerHTML = '';
 
-                // ZUFALLS-BUTTON (Immer als Erstes)
                 const randomBtn = document.createElement('button');
                 const isRandomActive = tempSettings[cat.key] === 'random';
                 randomBtn.className = `px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all border ${
@@ -718,13 +716,11 @@
                     renderSoundLists();
                     
                     const playIdx = getRandomSoundIndex(cat.target);
-                    
                     if (cat.id === 'alarm') {
                         playSynthPreset(playIdx, 1, null, true);
                     } else {
                         playSynthPreset(playIdx);
                     }
-
                     if (tempSettings.vibration && navigator.vibrate) navigator.vibrate(50);
                 };
                 container.appendChild(randomBtn);
@@ -751,7 +747,6 @@
                             } else {
                                 playSynthPreset(index);
                             }
-
                             if (tempSettings.vibration && navigator.vibrate) {
                                 navigator.vibrate(50);
                             }
@@ -803,6 +798,25 @@
             const volMultiplier = settingsOpen ? tempSettings.volume : currentSettings.volume;
             if (volMultiplier === 0) return; 
 
+            // Echte Delay-Line (Echo/Hall Effekt) für Presets, die "fx" definiert haben
+            let delayNode, feedbackGain, fxGain;
+            if (p.fx) {
+                delayNode = audioCtx.createDelay();
+                delayNode.delayTime.value = p.fx.delayTime;
+                
+                feedbackGain = audioCtx.createGain();
+                feedbackGain.gain.value = p.fx.feedback;
+                
+                fxGain = audioCtx.createGain();
+                fxGain.gain.value = p.fx.mix;
+
+                // Routing Loop
+                delayNode.connect(feedbackGain);
+                feedbackGain.connect(delayNode);
+                delayNode.connect(fxGain);
+                fxGain.connect(audioCtx.destination);
+            }
+
             for (let i = 0; i < repetitions; i++) {
                 const startTime = audioCtx.currentTime + (i * gap);
 
@@ -827,6 +841,11 @@
 
                     osc.connect(gain);
                     gain.connect(audioCtx.destination);
+                    
+                    // Schicke das Signal auch in den Delay, falls vorhanden
+                    if (delayNode) {
+                        gain.connect(delayNode);
+                    }
                     
                     osc.start(layerStart);
                     osc.stop(layerStart + layerDur);
@@ -867,16 +886,12 @@
                 volMult = 0.4;
             }
 
-            // Spannungsbogen (Tension) berechnen - Eskaliert nur in der letzten Minute (60000ms)
             let progress = 0;
             if (isRunning && exactRemainingMs <= 60000) {
                 progress = Math.max(0, Math.min(1, 1 - (exactRemainingMs / 60000)));
             }
             
-            // Leise zu Lauter (Startet bei 20%, endet bei 100% der Wunsch-Lautstärke)
             const tensionVolMult = 0.2 + (0.8 * progress);
-            
-            // Immer höherer Ton (Steigt exponentiell, max 1.5x höher am Ende)
             const tensionPitchMult = 1 + (0.5 * Math.pow(progress, 3));
 
             osc.frequency.setValueAtTime(freq * tensionPitchMult, t);
@@ -1027,13 +1042,18 @@
                 handleSecondTick(currentSecond);
             }
 
+            // Exakt synchronisierter Herzschlag (Kein Drift mehr!)
             if (currentSettings.heartbeatMode !== 'off' && exactRemainingMs <= currentSettings.heartbeatStart * 1000 && exactRemainingMs > 0) {
-                const now = Date.now();
-                if (now >= nextHeartbeatMs) {
+                let interval = exactRemainingMs <= 5000 ? 500 : 1000;
+                
+                // Beim ersten Eintritt in die Phase den nächsten Trigger initialisieren
+                if (nextHeartbeatMs === 0 || exactRemainingMs > nextHeartbeatMs + interval || exactRemainingMs < nextHeartbeatMs - interval) {
+                    nextHeartbeatMs = Math.floor(exactRemainingMs / interval) * interval;
+                }
+
+                if (exactRemainingMs <= nextHeartbeatMs) {
                     triggerHeartbeatPulse();
-                    
-                    let interval = exactRemainingMs <= 5000 ? 500 : 1000;
-                    nextHeartbeatMs = now + interval;
+                    nextHeartbeatMs -= interval;
                 }
             }
 
@@ -1095,7 +1115,7 @@
             initAudio(); 
             isRunning = true;
             targetTime = Date.now() + exactRemainingMs;
-            nextHeartbeatMs = 0; 
+            nextHeartbeatMs = 0; // Tracker Reset
             
             iconPlay.classList.add('hidden');
             iconPause.classList.remove('hidden');
