@@ -1241,6 +1241,10 @@
         
         btnSaveSettings.addEventListener('click', () => {
             currentSettings = { ...tempSettings };
+            
+            // Speichere die Einstellungen dauerhaft im Browser
+            localStorage.setItem('gameTimerSettingsV1', JSON.stringify(currentSettings));
+            
             updateVisuals(exactRemainingMs / 1000);
             closeSettings();
         });
