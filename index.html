@@ -2,24 +2,21 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <!-- Zoomen streng verboten, native App-Feeling -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Moderner Brettspiel Timer</title>
+    <title>Premium Brettspiel Timer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0f172a; /* slate-900 */
-            color: #f8fafc; /* slate-50 */
-            /* Verhindert Pull-to-Refresh und Bouncen auf iOS */
+            background-color: #0f172a;
+            color: #f8fafc;
             overscroll-behavior-y: none; 
         }
         .font-mono {
             font-family: 'JetBrains Mono', monospace;
         }
         
-        /* Modernes iOS Glassmorphism */
         .ios-glass {
             background: rgba(255, 255, 255, 0.03);
             backdrop-filter: blur(24px);
@@ -36,13 +33,11 @@
             box-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.5);
         }
         
-        /* Button Hover/Active States für Glas */
         .ios-btn:active {
             transform: scale(0.95);
             background: rgba(255, 255, 255, 0.1);
         }
         
-        /* Einheitlicher, interaktiver Glas-Look für alle Buttons */
         .ios-glass-btn {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(16px);
@@ -58,7 +53,14 @@
             border-color: rgba(255, 255, 255, 0.4);
         }
 
-        /* Animierter Aurora-Hintergrund (Blobs) */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
         @keyframes blob {
             0% { transform: translate(0px, 0px) scale(1); }
             33% { transform: translate(30px, -50px) scale(1.1); }
@@ -83,21 +85,12 @@
             animation: pulse-urgent 1s infinite !important;
         }
         
-        /* Harter roter 5mm Alarm-Rahmen und Overlay */
         @keyframes flash-alarm-border {
             0%, 100% { background-color: rgba(15, 23, 42, 0); box-shadow: inset 0 0 0 0px rgba(239, 68, 68, 0); }
             50% { background-color: rgba(153, 27, 27, 0.4); box-shadow: inset 0 0 0 5px rgba(239, 68, 68, 1); }
         }
         .alarm-active {
             animation: flash-alarm-border 0.6s infinite !important;
-        }
-        
-        select {
-            appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 0.5rem center;
-            background-size: 1em;
         }
 
         #bg-progress-bar {
@@ -135,38 +128,31 @@
             100% { stop-color: #a78bfa; }
         }
         
-        /* Skalierung der Schriftgrößen basierend auf Container-Größe für Landscape */
         .timer-text-container {
             container-type: inline-size;
         }
         .timer-text {
-            font-size: 25cqi; /* Skaliert perfekt mit dem Kreis */
+            font-size: 25cqi;
         }
     </style>
 </head>
 <body class="w-screen h-[100dvh] flex flex-col items-center justify-center p-2 sm:p-4 overflow-hidden relative">
 
-    <!-- Animierter Aurora-Hintergrund -->
     <div class="fixed inset-0 z-[-3] bg-slate-900 overflow-hidden">
         <div class="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-violet-600/60 blur-[80px] animate-blob"></div>
         <div class="absolute top-[20%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-emerald-500/50 blur-[90px] animate-blob animation-delay-2000"></div>
         <div class="absolute bottom-[-20%] left-[20%] w-[70vw] h-[70vw] rounded-full bg-teal-500/50 blur-[80px] animate-blob animation-delay-4000"></div>
     </div>
 
-    <!-- Klick-Fänger für den End-Alarm (Übernimmt auch den harten roten 5mm Rahmen) -->
     <div id="alarm-overlay" class="fixed inset-0 z-50 hidden cursor-pointer" title="Zum Stoppen tippen"></div>
 
-    <!-- Hintergrund Balken Animation (Via JS in 60 FPS kontrolliert) -->
     <div id="bg-progress-bar" class="fixed bottom-0 left-0 w-full z-[-1]" style="height: 0%;"></div>
 
-    <!-- Hauptcontainer: Spalte im Portrait, Reihe im Landscape. Im Landscape verteilen wir Timer und Knöpfe auf die Seiten -->
     <main class="w-full max-w-7xl mx-auto flex flex-col landscape:flex-row items-center justify-center landscape:justify-between z-10 relative h-full gap-4 landscape:gap-8 landscape:px-8">
         
         <!-- Timer Display -->
-        <!-- Im Landscape wächst dieser Bereich fast auf die volle Höhe des Bildschirms an (95dvh) -->
         <div class="relative w-[85vw] max-w-[400px] landscape:w-auto landscape:h-[95dvh] landscape:max-w-[95dvh] aspect-square flex-shrink-0 flex items-center justify-center timer-text-container transition-all">
             
-            <!-- Die Glas-Scheibe HINTER dem SVG-Kreis, blurrt den aufsteigenden Balken -->
             <div class="absolute inset-[4%] rounded-full ios-glass z-0"></div>
 
             <svg class="absolute inset-0 w-full h-full transform -rotate-90 z-10" viewBox="0 0 350 350">
@@ -191,13 +177,11 @@
             </div>
         </div>
 
-        <!-- Kontroll-Bereich: Wird im Landscape konsequent nach rechts geschoben und ist schmaler -->
+        <!-- Kontroll-Bereich -->
         <div class="flex flex-col items-center w-full max-w-sm landscape:w-[280px] landscape:flex-shrink-0 z-20">
             
-            <!-- Setup & Quick Select (wird verkleinert im Landscape) -->
             <div id="setup-controls" class="w-full transition-opacity duration-300">
                 <div class="flex gap-4 w-full justify-center mb-4">
-                    <!-- Minuten -->
                     <div class="flex flex-col items-center flex-1">
                         <span class="text-[10px] text-slate-300 mb-1 uppercase tracking-wider font-semibold opacity-70">Minuten</span>
                         <div class="flex items-center w-full justify-between bg-black/20 p-1 rounded-2xl shadow-inner border border-white/5">
@@ -207,14 +191,11 @@
                         </div>
                     </div>
 
-                    <!-- Sekunden -->
                     <div class="flex flex-col items-center flex-1">
                         <span class="text-[10px] text-slate-300 mb-1 uppercase tracking-wider font-semibold opacity-70">Sekunden</span>
                         <div class="flex items-center w-full justify-between bg-black/20 p-1 rounded-2xl shadow-inner border border-white/5">
-                            <!-- Auf -5 geändert -->
                             <button id="btn-sub-sec" class="w-10 h-10 ios-glass-btn rounded-xl flex items-center justify-center text-xl font-bold text-white">-</button>
                             <span id="ui-sec-val" class="font-mono text-2xl font-bold text-white">00</span>
-                            <!-- Auf +5 geändert -->
                             <button id="btn-add-sec" class="w-10 h-10 ios-glass-btn rounded-xl flex items-center justify-center text-xl font-bold text-white">+</button>
                         </div>
                     </div>
@@ -235,76 +216,61 @@
                 
                 <button id="btn-play-pause" class="w-20 h-20 landscape:w-16 landscape:h-16 rounded-full ios-glass-btn border-white/30 animate-gradient-xy flex items-center justify-center text-white shadow-[0_0_30px_rgba(139,92,246,0.3)] relative overflow-hidden group">
                     <div class="absolute inset-0 bg-gradient-to-tr from-emerald-500/80 via-teal-500/80 to-violet-600/80 z-0"></div>
-                    <!-- Play Icon (Default) -->
                     <svg id="icon-play" xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="ml-1 z-10 landscape:w-8 landscape:h-8"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                    <!-- Pause Icon (Hidden) -->
                     <svg id="icon-pause" xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="hidden z-10 landscape:w-8 landscape:h-8"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
                 </button>
                 
-                <button id="btn-settings" class="w-14 h-14 rounded-full ios-glass-btn flex items-center justify-center text-white" title="Sound Einstellungen">
+                <button id="btn-settings" class="w-14 h-14 rounded-full ios-glass-btn flex items-center justify-center text-white" title="Einstellungen">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
                 </button>
             </div>
         </div>
 
         <!-- Settings Panel -->
-        <div id="settings-panel" class="absolute inset-x-0 bottom-4 mx-auto w-full max-w-sm ios-glass-heavy rounded-3xl p-6 transition-all duration-300 hidden opacity-0 z-50">
-            <h2 class="text-xl font-semibold mb-5 border-b border-white/10 pb-3 flex items-center justify-between text-white">
-                <span>Audio Einstellungen</span>
-                <button id="btn-close-settings" class="text-white hover:text-white p-2 rounded-full ios-glass-btn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                </button>
+        <div id="settings-panel" class="absolute inset-x-0 bottom-4 mx-auto w-full max-w-md max-h-[85dvh] overflow-y-auto hide-scrollbar ios-glass-heavy rounded-3xl p-6 transition-all duration-300 hidden opacity-0 z-50">
+            <h2 class="text-xl font-semibold mb-5 pb-3 border-b border-white/10 text-white">
+                Einstellungen
             </h2>
+
+            <div class="flex items-center justify-between mb-6 pb-4 border-b border-white/5">
+                <div class="flex flex-col">
+                    <span class="text-sm text-slate-200 font-semibold tracking-wide">Haptisches Feedback</span>
+                    <span class="text-[10px] text-slate-400">Vibration bei Tönen aktivieren</span>
+                </div>
+                <button id="toggle-vibration" class="w-12 h-6 rounded-full bg-emerald-500 border border-transparent relative transition-colors duration-300">
+                    <div id="toggle-knob" class="w-5 h-5 bg-white rounded-full absolute top-[1px] left-[22px] transition-transform duration-300 shadow-sm"></div>
+                </button>
+            </div>
             
-            <div class="flex flex-col gap-4">
-                <!-- Jede Minute -->
+            <div class="flex flex-col gap-6">
+                <!-- Sound Lists (Kategorisiert durch JS) -->
                 <div>
-                    <label class="block text-[11px] text-slate-300 mb-1 uppercase tracking-wider font-semibold">Jede volle Minute</label>
-                    <div class="flex gap-2">
-                        <select id="input-sound-min" class="flex-grow bg-black/20 text-white text-sm rounded-xl px-4 py-3 outline-none border border-white/10 focus:border-emerald-400 shadow-inner cursor-pointer backdrop-blur-md"></select>
-                        <button id="btn-test-min" class="ios-glass-btn text-white px-4 rounded-xl flex justify-center items-center" title="Testen">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                        </button>
-                    </div>
+                    <label class="block text-[11px] text-slate-300 uppercase tracking-wider font-semibold">Jede volle Minute</label>
+                    <div id="list-sound-min" class="flex flex-col w-full"></div>
                 </div>
 
-                <!-- 30s Warning -->
-                <div>
-                    <label class="block text-[11px] text-slate-300 mb-1 uppercase tracking-wider font-semibold">Bei 30 Sekunden</label>
-                    <div class="flex gap-2">
-                        <select id="input-sound-30s" class="flex-grow bg-black/20 text-white text-sm rounded-xl px-4 py-3 outline-none border border-white/10 focus:border-violet-400 shadow-inner cursor-pointer backdrop-blur-md"></select>
-                        <button id="btn-test-30s" class="ios-glass-btn text-white px-4 rounded-xl flex justify-center items-center" title="Testen">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                        </button>
-                    </div>
+                <div class="mt-4">
+                    <label class="block text-[11px] text-slate-300 uppercase tracking-wider font-semibold">Bei 30 Sekunden</label>
+                    <div id="list-sound-30s" class="flex flex-col w-full"></div>
                 </div>
 
-                <!-- 8s Warning -->
-                <div>
-                    <label class="block text-[11px] text-slate-300 mb-1 uppercase tracking-wider font-semibold">Letzte 8 Sek. (Tonleiter)</label>
-                    <div class="flex gap-2">
-                        <select id="input-sound-8s" class="flex-grow bg-black/20 text-white text-sm rounded-xl px-4 py-3 outline-none border border-white/10 focus:border-emerald-400 shadow-inner cursor-pointer backdrop-blur-md"></select>
-                        <button id="btn-test-8s" class="ios-glass-btn text-white px-4 rounded-xl flex justify-center items-center" title="Testen">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                        </button>
-                    </div>
+                <div class="mt-4">
+                    <label class="block text-[11px] text-slate-300 uppercase tracking-wider font-semibold">Letzte 8 Sek. (Tonleiter)</label>
+                    <div id="list-sound-8s" class="flex flex-col w-full"></div>
                 </div>
 
-                <!-- Alarm -->
-                <div>
-                    <label class="block text-[11px] text-slate-300 mb-1 uppercase tracking-wider font-semibold">Alarm (Ende)</label>
-                    <div class="flex gap-2">
-                        <select id="input-sound-alarm" class="flex-grow bg-black/20 text-white text-sm rounded-xl px-4 py-3 outline-none border border-white/10 focus:border-red-400 shadow-inner cursor-pointer backdrop-blur-md"></select>
-                        <button id="btn-test-alarm" class="ios-glass-btn text-white px-4 rounded-xl flex justify-center items-center" title="Testen">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                        </button>
-                    </div>
+                <div class="mt-4">
+                    <label class="block text-[11px] text-slate-300 uppercase tracking-wider font-semibold">Alarm (Ende)</label>
+                    <div id="list-sound-alarm" class="flex flex-col w-full"></div>
                 </div>
             </div>
             
-            <div class="mt-6">
-                <button id="btn-close-settings-bottom" class="w-full ios-glass-btn text-white py-3.5 rounded-xl text-sm font-bold">
-                    Fertig
+            <div class="mt-8 flex gap-3">
+                <button id="btn-cancel-settings" class="flex-1 bg-white/10 hover:bg-white/20 text-white py-3.5 rounded-xl text-sm font-bold transition-all border border-white/20">
+                    Abbrechen
+                </button>
+                <button id="btn-save-settings" class="flex-1 bg-emerald-600/80 hover:bg-emerald-500/80 text-white py-3.5 rounded-xl text-sm font-bold transition-all border border-emerald-400/50 shadow-lg shadow-emerald-900/50">
+                    Speichern
                 </button>
             </div>
         </div>
@@ -312,36 +278,26 @@
     </main>
 
     <script>
-        // DOM Elements
         const timeDisplay = document.getElementById('time-display');
         const statusText = document.getElementById('status-text');
-        
         const btnPlayPause = document.getElementById('btn-play-pause');
         const iconPlay = document.getElementById('icon-play');
         const iconPause = document.getElementById('icon-pause');
         const btnReset = document.getElementById('btn-reset');
         const btnSettings = document.getElementById('btn-settings');
-        const btnCloseSettings = document.getElementById('btn-close-settings');
-        const btnCloseSettingsBottom = document.getElementById('btn-close-settings-bottom');
-        
-        const btnTest30s = document.getElementById('btn-test-30s');
-        const btnTest8s = document.getElementById('btn-test-8s');
-        const btnTestAlarm = document.getElementById('btn-test-alarm');
-        const btnTestMin = document.getElementById('btn-test-min');
         
         const settingsPanel = document.getElementById('settings-panel');
+        const btnCancelSettings = document.getElementById('btn-cancel-settings');
+        const btnSaveSettings = document.getElementById('btn-save-settings');
         const setupControls = document.getElementById('setup-controls');
         
         const uiMinVal = document.getElementById('ui-min-val');
         const uiSecVal = document.getElementById('ui-sec-val');
-        
-        const select30s = document.getElementById('input-sound-30s');
-        const select8s = document.getElementById('input-sound-8s');
-        const selectAlarm = document.getElementById('input-sound-alarm');
-        const selectMin = document.getElementById('input-sound-min');
         const bgProgressBar = document.getElementById('bg-progress-bar');
         const progressCircle = document.getElementById('progress-circle');
         const alarmOverlay = document.getElementById('alarm-overlay');
+        const toggleVibrationBtn = document.getElementById('toggle-vibration');
+        const toggleKnob = document.getElementById('toggle-knob');
 
         const CIRCUMFERENCE = 1005.3;
 
@@ -360,49 +316,216 @@
         let isAlarming = false;
         let alarmLoopId = null; 
 
-        // --- AUDIO ENGINE ---
+        // --- SETTINGS STATE ---
+        let currentSettings = {
+            min: 2,       // Majestätischer Gong
+            warn30s: 11,  // Mystisches Pad
+            warn8s: 5,    // Marimba (Skaliert am besten auf der Tonleiter)
+            alarm: 17,    // Episches Horn
+            vibration: true
+        };
+        let tempSettings = { ...currentSettings };
+
+        // --- AUDIO ENGINE (Premium Multi-Layer) ---
         let audioCtx = null;
         let activeAudioNodes = [];
 
         const soundPresets = [
-            { name: "Kein Ton", type: "sine", freq: 0, dur: 0, vol: 0 },
-            { name: "01. Classic Tick", type: "square", freq: 800, dur: 0.05, vol: 0.1 },
-            { name: "02. Digital Beep", type: "triangle", freq: 600, dur: 0.1, vol: 0.3 },
-            { name: "03. Buzzer", type: "sawtooth", freq: 150, dur: 0.4, vol: 0.4 },
-            { name: "04. Pluck", type: "sawtooth", freq: 400, dur: 0.1, vol: 0.2 },
-            { name: "05. Laser", type: "sawtooth", freq: 1200, dur: 0.15, vol: 0.2, slide: -800 },
-            { name: "06. Chime (Glocke)", type: "sine", freq: 1200, dur: 0.5, vol: 0.4 },
-            { name: "07. Retro Coin", type: "square", freq: 1000, dur: 0.15, vol: 0.2, slide: 500 },
-            { name: "08. Woodblock", type: "triangle", freq: 800, dur: 0.03, vol: 0.4 },
-            { name: "09. Crystal", type: "sine", freq: 2000, dur: 0.3, vol: 0.2 },
-            { name: "10. Sci-Fi Sweep", type: "square", freq: 400, dur: 0.2, vol: 0.2, slide: 400 },
-            { name: "11. Low Drone", type: "square", freq: 100, dur: 0.4, vol: 0.4 },
-            { name: "12. Sharp Click", type: "triangle", freq: 2500, dur: 0.02, vol: 0.2 },
-            { name: "13. Arcade", type: "square", freq: 500, dur: 0.15, vol: 0.2, slide: -100 },
-            { name: "14. Soft Bell", type: "sine", freq: 600, dur: 0.4, vol: 0.3 },
-            { name: "15. Tech Alert", type: "sawtooth", freq: 1500, dur: 0.1, vol: 0.2 },
-            { name: "16. Space Drop", type: "sine", freq: 800, dur: 0.2, vol: 0.3, slide: -600 },
-            { name: "17. Alien", type: "square", freq: 300, dur: 0.3, vol: 0.2, slide: 600 },
-            { name: "18. Warning Sirene", type: "triangle", freq: 700, dur: 0.4, vol: 0.3, slide: 200 },
-            { name: "19. Glass Hit", type: "sine", freq: 1800, dur: 0.05, vol: 0.3 },
-            { name: "20. Sub Kick", type: "sine", freq: 150, dur: 0.2, vol: 0.5, slide: -100 },
-            { name: "21. Organische Glocke", type: "sine", freq: 880, dur: 0.8, vol: 0.3 },
-            { name: "22. Sanftes Holz", type: "sine", freq: 400, dur: 0.08, vol: 0.4, slide: -100 }
+            { category: "System", name: "Kein Ton", layers: [] },
+            
+            // Organische Instrumente
+            { category: "Instrumente", name: "Tibetische Klangschale", layers: [
+                { type: "sine", freq: 349.23, dur: 2.0, vol: 0.4 }, // F4
+                { type: "sine", freq: 698.46, dur: 1.5, vol: 0.15 }, // F5
+                { type: "sine", freq: 1047.69, dur: 1.0, vol: 0.05 }  // F6
+            ]},
+            { category: "Instrumente", name: "Majestätischer Gong", layers: [
+                { type: "sine", freq: 110, dur: 2.5, vol: 0.5, slide: -5 },
+                { type: "triangle", freq: 220, dur: 2.0, vol: 0.2, slide: -10 },
+                { type: "sine", freq: 275, dur: 1.5, vol: 0.1 } // Schiefer Oberton für Metall-Charakter
+            ]},
+            { category: "Instrumente", name: "Sanfte Harfe", layers: [
+                { type: "triangle", freq: 523.25, dur: 1.0, vol: 0.3 }, // C5
+                { type: "sine", freq: 523.25, dur: 1.2, vol: 0.2 }
+            ]},
+            { category: "Instrumente", name: "Kirchenglocke", layers: [
+                { type: "sine", freq: 261.63, dur: 3.0, vol: 0.4 }, // C4
+                { type: "sine", freq: 523.25, dur: 2.0, vol: 0.2 }, // C5
+                { type: "sine", freq: 622.25, dur: 1.5, vol: 0.15 }, // Eb5 (Moll-Terz für Glocken-Sound)
+                { type: "sine", freq: 1046.50, dur: 1.0, vol: 0.1 } // C6
+            ]},
+            { category: "Instrumente", name: "Marimba", layers: [
+                { type: "triangle", freq: 440, dur: 0.2, vol: 0.5 },
+                { type: "sine", freq: 880, dur: 0.05, vol: 0.2 }
+            ]},
+            { category: "Instrumente", name: "Kalimba", layers: [
+                { type: "triangle", freq: 659.25, dur: 0.4, vol: 0.4 },
+                { type: "sine", freq: 1318.51, dur: 0.1, vol: 0.15 }
+            ]},
+            { category: "Instrumente", name: "Xylophon", layers: [
+                { type: "triangle", freq: 1046.50, dur: 0.15, vol: 0.4 },
+                { type: "sine", freq: 2093.00, dur: 0.05, vol: 0.1 }
+            ]},
+            { category: "Instrumente", name: "Kristall-Glocke", layers: [
+                { type: "sine", freq: 1567.98, dur: 1.5, vol: 0.3 }, // G6
+                { type: "sine", freq: 3135.96, dur: 0.8, vol: 0.1 }  // G7
+            ]},
+            
+            // Atmosphärisch & Pads
+            { category: "Atmosphärisch", name: "Warmer Akkord (Dur)", layers: [
+                { type: "sine", freq: 261.63, dur: 1.5, vol: 0.2 }, // C4
+                { type: "sine", freq: 329.63, dur: 1.5, vol: 0.2 }, // E4
+                { type: "sine", freq: 392.00, dur: 1.5, vol: 0.2 }  // G4
+            ]},
+            { category: "Atmosphärisch", name: "Melancholischer Akkord", layers: [
+                { type: "sine", freq: 261.63, dur: 1.5, vol: 0.2 }, // C4
+                { type: "sine", freq: 311.13, dur: 1.5, vol: 0.2 }, // Eb4 (Moll)
+                { type: "sine", freq: 392.00, dur: 1.5, vol: 0.2 }  // G4
+            ]},
+            { category: "Atmosphärisch", name: "Mystisches Pad", layers: [
+                { type: "sine", freq: 300, dur: 2.0, vol: 0.3 },
+                { type: "sine", freq: 303, dur: 2.0, vol: 0.3 } // Schwebung
+            ]},
+            { category: "Atmosphärisch", name: "Tiefes Horn", layers: [
+                { type: "triangle", freq: 130.81, dur: 1.5, vol: 0.4, slide: -5 }, // C3
+                { type: "sawtooth", freq: 130.81, dur: 1.2, vol: 0.1, slide: -5 }
+            ]},
+            { category: "Atmosphärisch", name: "Pulsierender Bass", layers: [
+                { type: "sine", freq: 65.41, dur: 1.5, vol: 0.5 }, // C2
+                { type: "sine", freq: 67.00, dur: 1.5, vol: 0.5 } // Schwebung
+            ]},
+            { category: "Atmosphärisch", name: "Ätherischer Chor", layers: [
+                { type: "triangle", freq: 523.25, dur: 2.0, vol: 0.15 },
+                { type: "triangle", freq: 659.25, dur: 2.0, vol: 0.15 },
+                { type: "sine", freq: 1046.50, dur: 2.0, vol: 0.1 }
+            ]},
+            { category: "Atmosphärisch", name: "Tiefer Weltraum", layers: [
+                { type: "sine", freq: 55.00, dur: 2.5, vol: 0.5 },
+                { type: "sine", freq: 880.00, dur: 2.0, vol: 0.05, slide: 50 }
+            ]},
+            
+            // Alarme & Signale
+            { category: "Signale", name: "Sanftes Erwachen", layers: [
+                { type: "sine", freq: 440, dur: 1.0, vol: 0.2 },
+                { type: "sine", freq: 554.37, dur: 1.0, vol: 0.2, slide: 50 },
+                { type: "triangle", freq: 659.25, dur: 1.0, vol: 0.2, slide: 100 }
+            ]},
+            { category: "Signale", name: "Episches Horn", layers: [
+                { type: "sawtooth", freq: 110, dur: 1.5, vol: 0.3, slide: -10 },
+                { type: "square", freq: 55, dur: 1.5, vol: 0.3 },
+                { type: "triangle", freq: 220, dur: 1.5, vol: 0.2 }
+            ]},
+            { category: "Signale", name: "Sonar-Ping", layers: [
+                { type: "sine", freq: 1200, dur: 0.8, vol: 0.4 },
+                { type: "sine", freq: 1205, dur: 0.8, vol: 0.4 }, // Beating
+                { type: "triangle", freq: 2400, dur: 0.2, vol: 0.1 }
+            ]},
+            { category: "Signale", name: "Dissonante Warnung", layers: [
+                { type: "sawtooth", freq: 440, dur: 0.6, vol: 0.2 },
+                { type: "sawtooth", freq: 466.16, dur: 0.6, vol: 0.2 } // Kleine Sekunde (spannungsreich)
+            ]},
+            
+            // Perkussiv (Ideal für Ticks/Sekunden)
+            { category: "Perkussiv", name: "Tiefe Pauke", layers: [
+                { type: "sine", freq: 120, dur: 0.4, vol: 0.6, slide: -40 },
+                { type: "triangle", freq: 60, dur: 0.3, vol: 0.3 }
+            ]},
+            { category: "Perkussiv", name: "Holz-Klopfer", layers: [
+                { type: "triangle", freq: 800, dur: 0.05, vol: 0.4, slide: -200 },
+                { type: "sine", freq: 1500, dur: 0.02, vol: 0.2 }
+            ]},
+            { category: "Perkussiv", name: "Wassertropfen", layers: [
+                { type: "sine", freq: 400, dur: 0.15, vol: 0.4, slide: 400 },
+                { type: "sine", freq: 800, dur: 0.1, vol: 0.1, slide: 800 }
+            ]},
+            { category: "Perkussiv", name: "Mechanisches Metronom", layers: [
+                { type: "square", freq: 1000, dur: 0.02, vol: 0.1 },
+                { type: "triangle", freq: 500, dur: 0.05, vol: 0.2 }
+            ]},
+            { category: "Perkussiv", name: "Weicher Herzschlag", layers: [
+                { type: "sine", freq: 60, dur: 0.2, vol: 0.6, slide: -20 },
+                { type: "sine", freq: 80, dur: 0.1, vol: 0.2 }
+            ]}
         ];
 
-        [selectMin, select30s, select8s, selectAlarm].forEach(select => {
+        function renderSoundLists() {
+            const categoriesUI = [
+                { id: 'min', key: 'min' },
+                { id: '30s', key: 'warn30s' },
+                { id: '8s', key: 'warn8s' },
+                { id: 'alarm', key: 'alarm' }
+            ];
+
+            const groupedPresets = {};
             soundPresets.forEach((p, index) => {
-                const opt = document.createElement('option');
-                opt.value = index;
-                opt.textContent = p.name;
-                select.appendChild(opt);
+                if (!groupedPresets[p.category]) groupedPresets[p.category] = [];
+                groupedPresets[p.category].push({ ...p, originalIndex: index });
             });
+
+            categoriesUI.forEach(cat => {
+                const container = document.getElementById(`list-sound-${cat.id}`);
+                container.innerHTML = '';
+
+                Object.keys(groupedPresets).forEach(categoryName => {
+                    const catHeader = document.createElement('div');
+                    catHeader.className = "w-full mt-3 mb-1.5 text-[9px] text-emerald-400/80 font-bold uppercase tracking-widest";
+                    catHeader.textContent = categoryName;
+                    container.appendChild(catHeader);
+
+                    const chipContainer = document.createElement('div');
+                    chipContainer.className = "flex flex-wrap gap-2 w-full mb-1";
+
+                    groupedPresets[categoryName].forEach(p => {
+                        const btn = document.createElement('button');
+                        const isActive = tempSettings[cat.key] === p.originalIndex;
+                        
+                        btn.className = `px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all border ${
+                            isActive 
+                            ? 'bg-emerald-500/80 border-emerald-400 text-white shadow-[0_0_15px_rgba(16,185,129,0.4)]' 
+                            : 'ios-glass-btn border-white/10 text-slate-300 hover:text-white'
+                        }`;
+                        btn.textContent = p.name;
+                        
+                        btn.onclick = () => {
+                            tempSettings[cat.key] = p.originalIndex;
+                            renderSoundLists(); 
+                            
+                            if (cat.id === '8s') {
+                                playSynthPreset(p.originalIndex, 1);
+                                setTimeout(() => playSynthPreset(p.originalIndex, 1.125), 250);
+                                setTimeout(() => playSynthPreset(p.originalIndex, 1.25), 500);
+                            } else if (cat.id === 'alarm') {
+                                playSynthPreset(p.originalIndex, 1, null, true);
+                            } else {
+                                playSynthPreset(p.originalIndex);
+                            }
+
+                            if (tempSettings.vibration && navigator.vibrate) {
+                                navigator.vibrate(50);
+                            }
+                        };
+                        chipContainer.appendChild(btn);
+                    });
+                    container.appendChild(chipContainer);
+                });
+            });
+
+            if (tempSettings.vibration) {
+                toggleVibrationBtn.classList.replace('bg-black/40', 'bg-emerald-500');
+                toggleVibrationBtn.classList.replace('border-white/10', 'border-transparent');
+                toggleKnob.classList.replace('left-[2px]', 'left-[22px]');
+            } else {
+                toggleVibrationBtn.classList.replace('bg-emerald-500', 'bg-black/40');
+                toggleVibrationBtn.classList.replace('border-transparent', 'border-white/10');
+                toggleKnob.classList.replace('left-[22px]', 'left-[2px]');
+            }
+        }
+
+        toggleVibrationBtn.addEventListener('click', () => {
+            tempSettings.vibration = !tempSettings.vibration;
+            renderSoundLists();
+            if (tempSettings.vibration && navigator.vibrate) navigator.vibrate(50);
         });
-        
-        selectMin.value = 21; 
-        select30s.value = 14; 
-        select8s.value = 1;  
-        selectAlarm.value = 2; 
 
         function initAudio() {
             if (!audioCtx) {
@@ -414,38 +537,42 @@
         function playSynthPreset(index, freqMultiplier = 1, forceDur = null, isAlarm = false) {
             initAudio();
             const p = soundPresets[index];
-            if (!p || p.freq === 0) return;
+            if (!p || !p.layers || p.layers.length === 0) return;
 
             const repetitions = isAlarm ? 4 : 1;
-            const gap = isAlarm ? (p.dur < 0.2 ? 0.2 : p.dur + 0.1) : 0;
+            const maxDur = Math.max(...p.layers.map(l => l.dur));
+            const gap = isAlarm ? (maxDur < 0.2 ? 0.2 : maxDur + 0.1) : 0;
 
             for (let i = 0; i < repetitions; i++) {
                 const startTime = audioCtx.currentTime + (i * gap);
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                
-                osc.type = p.type;
-                const baseFreq = p.freq * freqMultiplier;
-                
-                osc.frequency.setValueAtTime(baseFreq, startTime);
-                if (p.slide) {
-                    osc.frequency.linearRampToValueAtTime(baseFreq + p.slide, startTime + p.dur);
-                }
-                
-                gain.gain.setValueAtTime(0, startTime);
-                gain.gain.linearRampToValueAtTime(p.vol, startTime + 0.005);
-                gain.gain.exponentialRampToValueAtTime(0.001, startTime + (forceDur || p.dur));
 
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                
-                osc.start(startTime);
-                osc.stop(startTime + (forceDur || p.dur));
+                p.layers.forEach(layer => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    
+                    osc.type = layer.type;
+                    const baseFreq = layer.freq * freqMultiplier;
+                    
+                    osc.frequency.setValueAtTime(baseFreq, startTime);
+                    if (layer.slide) {
+                        osc.frequency.linearRampToValueAtTime(baseFreq + layer.slide, startTime + layer.dur);
+                    }
+                    
+                    gain.gain.setValueAtTime(0, startTime);
+                    gain.gain.linearRampToValueAtTime(layer.vol, startTime + 0.005);
+                    gain.gain.exponentialRampToValueAtTime(0.001, startTime + (forceDur || layer.dur));
 
-                activeAudioNodes.push(osc);
-                osc.onended = () => {
-                    activeAudioNodes = activeAudioNodes.filter(n => n !== osc);
-                };
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    
+                    osc.start(startTime);
+                    osc.stop(startTime + (forceDur || layer.dur));
+
+                    activeAudioNodes.push(osc);
+                    osc.onended = () => {
+                        activeAudioNodes = activeAudioNodes.filter(n => n !== osc);
+                    };
+                });
             }
         }
 
@@ -507,13 +634,16 @@
             }
 
             if (remainingSeconds % 60 === 0 && remainingSeconds !== totalSeconds && remainingSeconds > 0) {
-                playSynthPreset(selectMin.value);
+                playSynthPreset(currentSettings.min);
+                if (currentSettings.vibration && navigator.vibrate) navigator.vibrate(100);
             } else if (remainingSeconds === 30) {
-                playSynthPreset(select30s.value);
+                playSynthPreset(currentSettings.warn30s);
+                if (currentSettings.vibration && navigator.vibrate) navigator.vibrate(200);
             } else if (remainingSeconds <= 8 && remainingSeconds > 0) {
                 const step = 8 - remainingSeconds; 
                 const majorScale = [1, 1.125, 1.25, 1.333, 1.5, 1.666, 1.875, 2];
-                playSynthPreset(select8s.value, majorScale[step]);
+                playSynthPreset(currentSettings.warn8s, majorScale[step]);
+                if (currentSettings.vibration && navigator.vibrate) navigator.vibrate(50);
             }
         }
 
@@ -542,13 +672,19 @@
         function triggerEndlessAlarm() {
             if (!isAlarming) return;
             
-            playSynthPreset(selectAlarm.value, 1, null, true);
+            playSynthPreset(currentSettings.alarm, 1, null, true);
+            if (currentSettings.vibration && navigator.vibrate) {
+                navigator.vibrate([400, 200, 400, 200]);
+            }
             
-            const p = soundPresets[selectAlarm.value];
-            if (p && p.freq > 0) {
-                const gap = p.dur < 0.2 ? 0.2 : p.dur + 0.1;
+            const p = soundPresets[currentSettings.alarm];
+            if (p && p.layers && p.layers.length > 0) {
+                const maxDur = Math.max(...p.layers.map(l => l.dur));
+                const gap = maxDur < 0.2 ? 0.2 : maxDur + 0.1;
                 const clusterDurationMs = (4 * gap * 1000) + 600; 
                 alarmLoopId = setTimeout(triggerEndlessAlarm, clusterDurationMs);
+            } else {
+                alarmLoopId = setTimeout(triggerEndlessAlarm, 1000);
             }
         }
 
@@ -656,7 +792,6 @@
         btnSubMin.addEventListener('click', () => adjustTime(-60));
         btnAddMin.addEventListener('click', () => adjustTime(60));
         
-        // Exakte 5-Sekunden-Schritte
         btnSubSec.addEventListener('click', () => adjustTime(-5));
         btnAddSec.addEventListener('click', () => adjustTime(5));
 
@@ -677,37 +812,36 @@
             });
         });
 
-        function toggleSettings() {
-            settingsOpen = !settingsOpen;
-            if (settingsOpen) {
-                settingsPanel.classList.remove('hidden');
-                setTimeout(() => {
-                    settingsPanel.classList.remove('opacity-0');
-                    settingsPanel.classList.add('opacity-100');
-                }, 10);
-            } else {
-                settingsPanel.classList.remove('opacity-100');
-                settingsPanel.classList.add('opacity-0');
-                setTimeout(() => {
-                    settingsPanel.classList.add('hidden');
-                }, 300);
-            }
+        // Settings Logic (Save & Cancel)
+        btnSettings.addEventListener('click', () => {
+            tempSettings = { ...currentSettings };
+            renderSoundLists();
+            
+            settingsPanel.classList.remove('hidden');
+            setTimeout(() => {
+                settingsPanel.classList.remove('opacity-0');
+                settingsPanel.classList.add('opacity-100');
+            }, 10);
+        });
+
+        function closeSettings() {
+            stopAllAudio();
+            settingsPanel.classList.remove('opacity-100');
+            settingsPanel.classList.add('opacity-0');
+            setTimeout(() => {
+                settingsPanel.classList.add('hidden');
+            }, 300);
         }
+
+        btnCancelSettings.addEventListener('click', closeSettings);
+        
+        btnSaveSettings.addEventListener('click', () => {
+            currentSettings = { ...tempSettings };
+            closeSettings();
+        });
 
         btnPlayPause.addEventListener('click', toggleTimer);
         btnReset.addEventListener('click', resetTimer);
-        btnSettings.addEventListener('click', toggleSettings);
-        btnCloseSettings.addEventListener('click', toggleSettings);
-        btnCloseSettingsBottom.addEventListener('click', toggleSettings);
-        
-        btnTestMin.addEventListener('click', () => playSynthPreset(selectMin.value));
-        btnTest30s.addEventListener('click', () => playSynthPreset(select30s.value));
-        btnTest8s.addEventListener('click', () => {
-            playSynthPreset(select8s.value, 1);
-            setTimeout(() => playSynthPreset(select8s.value, 1.125), 250);
-            setTimeout(() => playSynthPreset(select8s.value, 1.25), 500);
-        });
-        btnTestAlarm.addEventListener('click', () => playSynthPreset(selectAlarm.value, 1, null, true));
 
         document.body.addEventListener('click', initAudio, { once: true });
 
