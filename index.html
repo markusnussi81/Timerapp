@@ -144,6 +144,9 @@
         <div class="absolute bottom-[-20%] left-[20%] w-[70vw] h-[70vw] rounded-full bg-teal-500/50 blur-[80px] animate-blob animation-delay-4000"></div>
     </div>
 
+    <!-- Visueller Puls für den Herzschlag-Modus -->
+    <div id="heartbeat-overlay" class="fixed inset-0 z-[-2] bg-red-600 opacity-0 pointer-events-none transition-opacity duration-[150ms] ease-out"></div>
+
     <div id="alarm-overlay" class="fixed inset-0 z-50 hidden cursor-pointer" title="Zum Stoppen tippen"></div>
 
     <div id="bg-progress-bar" class="fixed bottom-0 left-0 w-full z-[-1]" style="height: 0%;"></div>
@@ -232,13 +235,23 @@
                 Einstellungen
             </h2>
 
-            <div class="flex items-center justify-between mb-6 pb-4 border-b border-white/5">
+            <div class="flex items-center justify-between mb-4 pb-4 border-b border-white/5">
                 <div class="flex flex-col">
                     <span class="text-sm text-slate-200 font-semibold tracking-wide">Haptisches Feedback</span>
                     <span class="text-[10px] text-slate-400">Vibration bei Tönen aktivieren</span>
                 </div>
                 <button id="toggle-vibration" class="w-12 h-6 rounded-full bg-emerald-500 border border-transparent relative transition-colors duration-300">
                     <div id="toggle-knob" class="w-5 h-5 bg-white rounded-full absolute top-[1px] left-[22px] transition-transform duration-300 shadow-sm"></div>
+                </button>
+            </div>
+
+            <div class="flex items-center justify-between mb-6 pb-4 border-b border-white/5">
+                <div class="flex flex-col">
+                    <span class="text-sm text-slate-200 font-semibold tracking-wide">Herzschlag-Modus</span>
+                    <span class="text-[10px] text-slate-400">Intensives Pochen in den letzten 60s</span>
+                </div>
+                <button id="toggle-heartbeat" class="w-12 h-6 rounded-full bg-black/40 border border-transparent relative transition-colors duration-300">
+                    <div id="toggle-knob-heartbeat" class="w-5 h-5 bg-white rounded-full absolute top-[1px] left-[2px] transition-transform duration-300 shadow-sm"></div>
                 </button>
             </div>
             
@@ -296,8 +309,12 @@
         const bgProgressBar = document.getElementById('bg-progress-bar');
         const progressCircle = document.getElementById('progress-circle');
         const alarmOverlay = document.getElementById('alarm-overlay');
+        const heartbeatOverlay = document.getElementById('heartbeat-overlay');
+        
         const toggleVibrationBtn = document.getElementById('toggle-vibration');
         const toggleKnob = document.getElementById('toggle-knob');
+        const toggleHeartbeatBtn = document.getElementById('toggle-heartbeat');
+        const toggleKnobHeartbeat = document.getElementById('toggle-knob-heartbeat');
 
         const CIRCUMFERENCE = 1005.3;
 
@@ -315,6 +332,9 @@
         let settingsOpen = false;
         let isAlarming = false;
         let alarmLoopId = null; 
+        
+        // Herzschlag Tracker
+        let nextHeartbeatMs = 0;
 
         // --- SETTINGS STATE ---
         let currentSettings = {
@@ -322,7 +342,8 @@
             warn30s: 11,  // Mystisches Pad
             warn8s: 5,    // Marimba (Skaliert am besten auf der Tonleiter)
             alarm: 17,    // Episches Horn
-            vibration: true
+            vibration: true,
+            heartbeat: false
         };
         let tempSettings = { ...currentSettings };
 
@@ -510,6 +531,7 @@
                 });
             });
 
+            // UI für Toggle-Buttons aktualisieren
             if (tempSettings.vibration) {
                 toggleVibrationBtn.classList.replace('bg-black/40', 'bg-emerald-500');
                 toggleVibrationBtn.classList.replace('border-white/10', 'border-transparent');
@@ -519,12 +541,28 @@
                 toggleVibrationBtn.classList.replace('border-transparent', 'border-white/10');
                 toggleKnob.classList.replace('left-[22px]', 'left-[2px]');
             }
+
+            if (tempSettings.heartbeat) {
+                toggleHeartbeatBtn.classList.replace('bg-black/40', 'bg-red-500');
+                toggleHeartbeatBtn.classList.replace('border-white/10', 'border-transparent');
+                toggleKnobHeartbeat.classList.replace('left-[2px]', 'left-[22px]');
+            } else {
+                toggleHeartbeatBtn.classList.replace('bg-red-500', 'bg-black/40');
+                toggleHeartbeatBtn.classList.replace('border-transparent', 'border-white/10');
+                toggleKnobHeartbeat.classList.replace('left-[22px]', 'left-[2px]');
+            }
         }
 
         toggleVibrationBtn.addEventListener('click', () => {
             tempSettings.vibration = !tempSettings.vibration;
             renderSoundLists();
             if (tempSettings.vibration && navigator.vibrate) navigator.vibrate(50);
+        });
+
+        toggleHeartbeatBtn.addEventListener('click', () => {
+            tempSettings.heartbeat = !tempSettings.heartbeat;
+            renderSoundLists();
+            if (tempSettings.heartbeat && tempSettings.vibration && navigator.vibrate) navigator.vibrate(50);
         });
 
         function initAudio() {
@@ -574,6 +612,21 @@
                     };
                 });
             }
+        }
+
+        function triggerHeartbeatPulse() {
+            // Finde dynamisch den Index für "Weicher Herzschlag"
+            const heartbeatPresetIndex = soundPresets.findIndex(p => p.name === "Weicher Herzschlag");
+            if (heartbeatPresetIndex !== -1) playSynthPreset(heartbeatPresetIndex);
+            
+            // Leichte Vibration
+            if (currentSettings.vibration && navigator.vibrate) navigator.vibrate(30);
+
+            // Visueller Roter Flash
+            heartbeatOverlay.style.opacity = exactRemainingMs <= 10000 ? '0.3' : '0.15';
+            setTimeout(() => {
+                heartbeatOverlay.style.opacity = '0';
+            }, 150);
         }
 
         function stopAllAudio() {
@@ -665,6 +718,21 @@
                 handleSecondTick(currentSecond);
             }
 
+            // Herzschlag-Logik während Frame-Updates
+            if (currentSettings.heartbeat && exactRemainingMs <= 60000 && exactRemainingMs > 0) {
+                const now = Date.now();
+                if (now >= nextHeartbeatMs) {
+                    triggerHeartbeatPulse();
+                    
+                    // Intervalle auf Basis der verbleibenden Zeit
+                    let interval = 1000;
+                    if (exactRemainingMs <= 10000) interval = 333; // Panik (3x pro Sekunde)
+                    else if (exactRemainingMs <= 30000) interval = 500; // Intensiv (2x pro Sekunde)
+                    
+                    nextHeartbeatMs = now + interval;
+                }
+            }
+
             updateVisuals(exactRemainingMs / 1000);
             requestAnimationFrame(timerFrame);
         }
@@ -713,6 +781,7 @@
             isAlarming = false;
             alarmOverlay.classList.remove('alarm-active');
             alarmOverlay.classList.add('hidden');
+            nextHeartbeatMs = 0; // Setzt den Tracker für den Herzschlag zurück
             
             clearTimeout(alarmLoopId); 
             stopAllAudio(); 
@@ -726,6 +795,7 @@
             initAudio(); 
             isRunning = true;
             targetTime = Date.now() + exactRemainingMs;
+            nextHeartbeatMs = 0; // Trigger immediately when starting under 60s
             
             iconPlay.classList.add('hidden');
             iconPause.classList.remove('hidden');
@@ -744,6 +814,7 @@
             isRunning = false;
             iconPlay.classList.remove('hidden');
             iconPause.classList.add('hidden');
+            nextHeartbeatMs = 0; 
             
             setupControls.classList.remove('hidden');
             btnReset.classList.remove('hidden');
@@ -764,6 +835,7 @@
             pauseTimer();
             exactRemainingMs = totalSeconds * 1000;
             remainingSeconds = totalSeconds;
+            nextHeartbeatMs = 0;
             statusText.textContent = "Bereit";
             statusText.classList.replace('text-red-400', 'text-violet-300');
             statusText.classList.replace('text-emerald-300', 'text-violet-300');
@@ -780,6 +852,7 @@
             totalSeconds = newTotal;
             exactRemainingMs = totalSeconds * 1000;
             remainingSeconds = totalSeconds;
+            nextHeartbeatMs = 0;
             
             if (isRunning) {
                 targetTime = Date.now() + exactRemainingMs;
