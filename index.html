@@ -2,7 +2,8 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Zoomen streng verboten, native App-Feeling -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Moderner Brettspiel Timer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -11,18 +12,69 @@
             font-family: 'Inter', sans-serif;
             background-color: #0f172a; /* slate-900 */
             color: #f8fafc; /* slate-50 */
+            /* Verhindert Pull-to-Refresh und Bouncen auf iOS */
+            overscroll-behavior-y: none; 
         }
         .font-mono {
             font-family: 'JetBrains Mono', monospace;
         }
         
-        .glass-panel {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(10px);
+        /* Modernes iOS Glassmorphism */
+        .ios-glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
             border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .ios-glass-heavy {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.5);
         }
         
-        /* Neue Animation für die letzten 8 Sekunden */
+        /* Button Hover/Active States für Glas */
+        .ios-btn:active {
+            transform: scale(0.95);
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Einheitlicher, interaktiver Glas-Look für alle Buttons */
+        .ios-glass-btn {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .ios-glass-btn:active {
+            transform: scale(0.92);
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Animierter Aurora-Hintergrund (Blobs) */
+        @keyframes blob {
+            0% { transform: translate(0px, 0px) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+            100% { transform: translate(0px, 0px) scale(1); }
+        }
+        .animate-blob {
+            animation: blob 8s infinite ease-in-out;
+        }
+        .animation-delay-2000 {
+            animation-delay: 2s;
+        }
+        .animation-delay-4000 {
+            animation-delay: 4s;
+        }
+        
         @keyframes pulse-urgent {
             0%, 100% { transform: scale(1); text-shadow: 0 0 10px rgba(239, 68, 68, 0); color: #f8fafc; }
             50% { transform: scale(1.05); text-shadow: 0 0 30px rgba(239, 68, 68, 0.9); color: #ef4444; }
@@ -31,24 +83,14 @@
             animation: pulse-urgent 1s infinite !important;
         }
         
-        /* End-Alarm Animationen (endlos) */
         @keyframes flash-bg {
-            0%, 100% { background-color: #0f172a; } /* slate-900 */
-            50% { background-color: rgba(153, 27, 27, 0.4); } /* dunkles Rot */
+            0%, 100% { background-color: #0f172a; }
+            50% { background-color: rgba(153, 27, 27, 0.4); }
         }
         .alarm-active {
             animation: flash-bg 0.6s infinite !important;
         }
         
-        @keyframes pulse-alarm {
-            0%, 100% { transform: scale(1); text-shadow: 0 0 20px rgba(239, 68, 68, 0.8); color: #ef4444; }
-            50% { transform: scale(1.15); text-shadow: 0 0 50px rgba(239, 68, 68, 1); color: #f87171; }
-        }
-        .text-alarm-active {
-            animation: pulse-alarm 0.5s infinite !important;
-        }
-        
-        /* Einstellungen für Custom Select */
         select {
             appearance: none;
             background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
@@ -57,7 +99,6 @@
             background-size: 1em;
         }
 
-        /* Hintergrund Balken Animation */
         #bg-progress-bar {
             will-change: height, background-position;
             background-image: linear-gradient(180deg, rgba(16, 185, 129, 0.1), var(--dynamic-color, rgba(139, 92, 246, 0.5)), rgba(16, 185, 129, 0.1));
@@ -71,7 +112,6 @@
             100% { background-position: 50% 0%; }
         }
 
-        /* Button Gradient Animation */
         .animate-gradient-xy {
             background-size: 200% 200%;
             animation: gradient-xy 3s ease infinite;
@@ -83,25 +123,34 @@
             100% { background-position: 0% 50%; }
         }
 
-        /* SVG Circle Gradient Animation */
-        #stop1 {
-            animation: stop1-color 4s alternate infinite ease-in-out;
-        }
-        #stop2 {
-            animation: stop2-color 4s alternate infinite ease-in-out;
-        }
-        
+        #stop1 { animation: stop1-color 4s alternate infinite ease-in-out; }
+        #stop2 { animation: stop2-color 4s alternate infinite ease-in-out; }
         @keyframes stop1-color {
-            0% { stop-color: #10b981; } /* emerald-500 */
-            100% { stop-color: #34d399; } /* emerald-400 (heller) */
+            0% { stop-color: #10b981; }
+            100% { stop-color: #34d399; }
         }
         @keyframes stop2-color {
-            0% { stop-color: #8b5cf6; } /* violet-500 */
-            100% { stop-color: #a78bfa; } /* violet-400 (heller) */
+            0% { stop-color: #8b5cf6; }
+            100% { stop-color: #a78bfa; }
+        }
+        
+        /* Skalierung der Schriftgrößen basierend auf Container-Größe für Landscape */
+        .timer-text-container {
+            container-type: inline-size;
+        }
+        .timer-text {
+            font-size: 25cqi; /* Skaliert perfekt mit dem Kreis */
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center p-4 overflow-hidden relative">
+<body class="w-screen h-[100dvh] flex flex-col items-center justify-center p-2 sm:p-4 overflow-hidden relative">
+
+    <!-- Animierter Aurora-Hintergrund -->
+    <div class="fixed inset-0 z-[-3] bg-slate-900 overflow-hidden">
+        <div class="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-violet-600/60 blur-[80px] animate-blob"></div>
+        <div class="absolute top-[20%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-emerald-500/50 blur-[90px] animate-blob animation-delay-2000"></div>
+        <div class="absolute bottom-[-20%] left-[20%] w-[70vw] h-[70vw] rounded-full bg-teal-500/50 blur-[80px] animate-blob animation-delay-4000"></div>
+    </div>
 
     <!-- Klick-Fänger für den End-Alarm (Muss über allem liegen) -->
     <div id="alarm-overlay" class="fixed inset-0 z-50 hidden cursor-pointer" title="Zum Stoppen tippen"></div>
@@ -109,138 +158,150 @@
     <!-- Hintergrund Balken Animation (Via JS in 60 FPS kontrolliert) -->
     <div id="bg-progress-bar" class="fixed bottom-0 left-0 w-full z-[-1]" style="height: 0%;"></div>
 
-    <!-- Kleine Anzeigen für alle Tischseiten -->
-    <div class="fixed top-4 left-1/2 text-4xl font-mono text-slate-500/30 font-bold tracking-widest small-timer pointer-events-none" style="transform: translateX(-50%) rotate(180deg);">05:00</div>
-    <div class="fixed left-12 top-1/2 text-4xl font-mono text-slate-500/30 font-bold tracking-widest small-timer pointer-events-none" style="transform: translateY(-50%) rotate(90deg);">05:00</div>
-    <div class="fixed right-12 top-1/2 text-4xl font-mono text-slate-500/30 font-bold tracking-widest small-timer pointer-events-none" style="transform: translateY(-50%) rotate(-90deg);">05:00</div>
-
-    <main class="w-full max-w-md mx-auto flex flex-col items-center z-10 relative mt-4">
+    <!-- Hauptcontainer: Spalte im Portrait, Reihe im Landscape -->
+    <main class="w-full max-w-6xl mx-auto flex flex-col landscape:flex-row items-center justify-center landscape:justify-evenly z-10 relative h-full gap-4 landscape:gap-8">
         
-        <!-- Timer Display (Mit 60FPS Kreis-Animation in Grün-Lila) -->
-        <div class="relative w-[350px] h-[350px] mb-6 flex items-center justify-center">
-            <svg class="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 350 350">
+        <!-- Timer Display -->
+        <!-- Im Landscape wächst dieser Bereich auf die Höhe des Bildschirms an -->
+        <div class="relative w-[85vw] max-w-[400px] landscape:w-auto landscape:h-[85dvh] aspect-square flex-shrink-0 flex items-center justify-center timer-text-container transition-all">
+            
+            <!-- Die Glas-Scheibe HINTER dem SVG-Kreis, blurrt den aufsteigenden Balken -->
+            <div class="absolute inset-[4%] rounded-full ios-glass z-0"></div>
+
+            <svg class="absolute inset-0 w-full h-full transform -rotate-90 z-10" viewBox="0 0 350 350">
                 <defs>
                     <linearGradient id="circle-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop id="stop1" offset="0%" stop-color="#10b981" /> <!-- Animiert -->
-                        <stop id="stop2" offset="100%" stop-color="#8b5cf6" /> <!-- Animiert -->
+                        <stop id="stop1" offset="0%" stop-color="#10b981" />
+                        <stop id="stop2" offset="100%" stop-color="#8b5cf6" />
                     </linearGradient>
                 </defs>
                 <circle id="progress-circle" cx="175" cy="175" r="160" stroke="url(#circle-gradient)" stroke-width="12" fill="transparent" 
                         stroke-dasharray="1005.3" stroke-dashoffset="0" stroke-linecap="round"></circle>
             </svg>
 
-            <div class="relative z-10 flex flex-col items-center mt-4">
-                <div id="time-display" class="text-[5.5rem] leading-none font-mono font-bold text-white tracking-tight drop-shadow-lg">
+            <!-- Text Ebene -->
+            <div class="relative z-20 flex flex-col items-center mt-[4%] w-full">
+                <div id="time-display" class="timer-text leading-none font-mono font-bold text-white tracking-tight drop-shadow-2xl">
                     05:00
                 </div>
-                <div id="status-text" class="text-violet-400 text-base font-medium mt-6 uppercase tracking-widest">
+                <div id="status-text" class="text-violet-300 font-medium mt-2 uppercase tracking-widest" style="font-size: 5cqi;">
                     Bereit
                 </div>
             </div>
         </div>
 
-        <!-- Schnellwahl und +/- Buttons -->
-        <div class="flex flex-col items-center w-full max-w-sm mb-10">
-            <div class="flex gap-6 w-full justify-center mb-6">
-                <!-- Minuten Block -->
-                <div class="flex flex-col items-center">
-                    <span class="text-xs text-slate-400 mb-2 uppercase tracking-wider font-semibold">Minuten</span>
-                    <div class="flex items-center bg-slate-800/80 p-1.5 rounded-xl border border-slate-700 shadow-inner">
-                        <button id="btn-sub-min" class="w-12 h-12 flex items-center justify-center bg-slate-700/50 rounded-lg hover:bg-slate-600 active:scale-95 text-2xl font-bold text-slate-200 transition-all">-</button>
-                        <span id="ui-min-val" class="w-16 text-center font-mono text-3xl font-bold text-white">05</span>
-                        <button id="btn-add-min" class="w-12 h-12 flex items-center justify-center bg-slate-700/50 rounded-lg hover:bg-slate-600 active:scale-95 text-2xl font-bold text-slate-200 transition-all">+</button>
+        <!-- Kontroll-Bereich: Wird im Landscape nach rechts geschoben -->
+        <div class="flex flex-col items-center w-full max-w-sm landscape:max-w-xs z-20">
+            
+            <!-- Setup & Quick Select (wird verkleinert im Landscape) -->
+            <div id="setup-controls" class="w-full transition-opacity duration-300">
+                <div class="flex gap-4 w-full justify-center mb-4">
+                    <!-- Minuten -->
+                    <div class="flex flex-col items-center flex-1">
+                        <span class="text-[10px] text-slate-300 mb-1 uppercase tracking-wider font-semibold opacity-70">Minuten</span>
+                        <div class="flex items-center w-full justify-between bg-black/20 p-1 rounded-2xl shadow-inner border border-white/5">
+                            <button id="btn-sub-min" class="w-10 h-10 ios-glass-btn rounded-xl flex items-center justify-center text-xl font-bold text-white">-</button>
+                            <span id="ui-min-val" class="font-mono text-2xl font-bold text-white">05</span>
+                            <button id="btn-add-min" class="w-10 h-10 ios-glass-btn rounded-xl flex items-center justify-center text-xl font-bold text-white">+</button>
+                        </div>
+                    </div>
+
+                    <!-- Sekunden -->
+                    <div class="flex flex-col items-center flex-1">
+                        <span class="text-[10px] text-slate-300 mb-1 uppercase tracking-wider font-semibold opacity-70">Sekunden</span>
+                        <div class="flex items-center w-full justify-between bg-black/20 p-1 rounded-2xl shadow-inner border border-white/5">
+                            <button id="btn-sub-sec" class="w-10 h-10 ios-glass-btn rounded-xl flex items-center justify-center text-xl font-bold text-white">-</button>
+                            <span id="ui-sec-val" class="font-mono text-2xl font-bold text-white">00</span>
+                            <button id="btn-add-sec" class="w-10 h-10 ios-glass-btn rounded-xl flex items-center justify-center text-xl font-bold text-white">+</button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Sekunden Block -->
-                <div class="flex flex-col items-center">
-                    <span class="text-xs text-slate-400 mb-2 uppercase tracking-wider font-semibold">Sekunden</span>
-                    <div class="flex items-center bg-slate-800/80 p-1.5 rounded-xl border border-slate-700 shadow-inner">
-                        <button id="btn-sub-sec" class="w-12 h-12 flex items-center justify-center bg-slate-700/50 rounded-lg hover:bg-slate-600 active:scale-95 text-2xl font-bold text-slate-200 transition-all">-</button>
-                        <span id="ui-sec-val" class="w-16 text-center font-mono text-3xl font-bold text-white">00</span>
-                        <button id="btn-add-sec" class="w-12 h-12 flex items-center justify-center bg-slate-700/50 rounded-lg hover:bg-slate-600 active:scale-95 text-2xl font-bold text-slate-200 transition-all">+</button>
-                    </div>
+                <div class="flex gap-2 w-full justify-center text-xs font-semibold mb-6">
+                    <button data-mins="1" class="btn-quick-select flex-1 py-2.5 ios-glass-btn text-white rounded-xl">1 Min</button>
+                    <button data-mins="3" class="btn-quick-select flex-1 py-2.5 ios-glass-btn text-white rounded-xl">3 Min</button>
+                    <button data-mins="5" class="btn-quick-select flex-1 py-2.5 ios-glass-btn text-white rounded-xl">5 Min</button>
                 </div>
             </div>
 
-            <div class="flex gap-2 w-full justify-center text-sm font-medium px-4">
-                <button data-mins="1" class="btn-quick-select flex-1 py-2 bg-emerald-900/30 text-emerald-300 rounded-lg border border-emerald-800/50 hover:bg-emerald-800/80 transition-all shadow-sm">1 Min</button>
-                <button data-mins="3" class="btn-quick-select flex-1 py-2 bg-violet-900/30 text-violet-300 rounded-lg border border-violet-800/50 hover:bg-violet-800/80 transition-all shadow-sm">3 Min</button>
-                <button data-mins="5" class="btn-quick-select flex-1 py-2 bg-emerald-900/30 text-emerald-300 rounded-lg border border-emerald-800/50 hover:bg-emerald-800/80 transition-all shadow-sm">5 Min</button>
+            <!-- Haupt-Aktionsbuttons -->
+            <!-- Im Landscape wird der Startknopf minimal verkleinert, damit alles Platz hat -->
+            <div class="flex gap-5 items-center justify-center">
+                <button id="btn-reset" class="w-14 h-14 rounded-full ios-glass-btn flex items-center justify-center text-white" title="Zurücksetzen">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                </button>
+                
+                <button id="btn-play-pause" class="w-20 h-20 landscape:w-16 landscape:h-16 rounded-full ios-glass-btn border-white/30 animate-gradient-xy flex items-center justify-center text-white shadow-[0_0_30px_rgba(139,92,246,0.3)] relative overflow-hidden group">
+                    <div class="absolute inset-0 bg-gradient-to-tr from-emerald-500/80 via-teal-500/80 to-violet-600/80 z-0"></div>
+                    <!-- Play Icon (Default) -->
+                    <svg id="icon-play" xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="ml-1 z-10 landscape:w-8 landscape:h-8"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    <!-- Pause Icon (Hidden) -->
+                    <svg id="icon-pause" xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="hidden z-10 landscape:w-8 landscape:h-8"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                </button>
+                
+                <button id="btn-settings" class="w-14 h-14 rounded-full ios-glass-btn flex items-center justify-center text-white" title="Sound Einstellungen">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                </button>
             </div>
         </div>
 
-        <div class="flex gap-6 mb-8">
-            <button id="btn-reset" class="w-16 h-16 rounded-full glass-panel flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-700 transition-all active:scale-95 shadow-lg" title="Zurücksetzen">
-                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-            </button>
-            <button id="btn-play-pause" class="w-24 h-24 rounded-full bg-gradient-to-tr from-emerald-500 via-teal-500 to-violet-600 animate-gradient-xy flex items-center justify-center text-white shadow-[0_0_25px_rgba(139,92,246,0.4)] hover:shadow-[0_0_35px_rgba(139,92,246,0.6)] hover:scale-105 transition-all active:scale-95">
-                <!-- Play Icon (Default) -->
-                <svg id="icon-play" xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                <!-- Pause Icon (Hidden) -->
-                <svg id="icon-pause" xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-            </button>
-            <button id="btn-settings" class="w-16 h-16 rounded-full glass-panel flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-700 transition-all active:scale-95 shadow-lg" title="Sound Einstellungen">
-                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
-            </button>
-        </div>
-
-        <div id="settings-panel" class="absolute bottom-24 w-full max-w-sm glass-panel rounded-2xl p-6 transition-all duration-300 overflow-hidden hidden opacity-0 shadow-2xl z-20 border-violet-500/30 border">
-            <h2 class="text-xl font-semibold mb-4 border-b border-slate-700 pb-2 flex items-center justify-between">
-                <span>Sound Einstellungen</span>
-                <button id="btn-close-settings" class="text-slate-400 hover:text-white p-1 rounded-full hover:bg-slate-700 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        <!-- Settings Panel -->
+        <div id="settings-panel" class="absolute inset-x-0 bottom-4 mx-auto w-full max-w-sm ios-glass-heavy rounded-3xl p-6 transition-all duration-300 hidden opacity-0 z-50">
+            <h2 class="text-xl font-semibold mb-5 border-b border-white/10 pb-3 flex items-center justify-between text-white">
+                <span>Audio Einstellungen</span>
+                <button id="btn-close-settings" class="text-white hover:text-white p-2 rounded-full ios-glass-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
             </h2>
             
             <div class="flex flex-col gap-4">
                 <!-- Jede Minute -->
                 <div>
-                    <label class="block text-xs text-slate-400 mb-1 uppercase tracking-wider">Jede volle Minute</label>
+                    <label class="block text-[11px] text-slate-300 mb-1 uppercase tracking-wider font-semibold">Jede volle Minute</label>
                     <div class="flex gap-2">
-                        <select id="input-sound-min" class="flex-grow bg-slate-800 text-white text-sm rounded-lg px-3 py-2.5 outline-none border border-slate-600 focus:border-violet-500 shadow-sm cursor-pointer"></select>
-                        <button id="btn-test-min" class="bg-slate-700 hover:bg-slate-600 text-white px-3 rounded-lg border border-slate-600 flex justify-center items-center transition-colors" title="Testen">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        <select id="input-sound-min" class="flex-grow bg-black/20 text-white text-sm rounded-xl px-4 py-3 outline-none border border-white/10 focus:border-emerald-400 shadow-inner cursor-pointer backdrop-blur-md"></select>
+                        <button id="btn-test-min" class="ios-glass-btn text-white px-4 rounded-xl flex justify-center items-center" title="Testen">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                         </button>
                     </div>
                 </div>
 
                 <!-- 30s Warning -->
                 <div>
-                    <label class="block text-xs text-slate-400 mb-1 uppercase tracking-wider">Bei 30 Sekunden</label>
+                    <label class="block text-[11px] text-slate-300 mb-1 uppercase tracking-wider font-semibold">Bei 30 Sekunden</label>
                     <div class="flex gap-2">
-                        <select id="input-sound-30s" class="flex-grow bg-slate-800 text-white text-sm rounded-lg px-3 py-2.5 outline-none border border-slate-600 focus:border-violet-500 shadow-sm cursor-pointer"></select>
-                        <button id="btn-test-30s" class="bg-slate-700 hover:bg-slate-600 text-white px-3 rounded-lg border border-slate-600 flex justify-center items-center transition-colors" title="Testen">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        <select id="input-sound-30s" class="flex-grow bg-black/20 text-white text-sm rounded-xl px-4 py-3 outline-none border border-white/10 focus:border-violet-400 shadow-inner cursor-pointer backdrop-blur-md"></select>
+                        <button id="btn-test-30s" class="ios-glass-btn text-white px-4 rounded-xl flex justify-center items-center" title="Testen">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                         </button>
                     </div>
                 </div>
 
                 <!-- 8s Warning -->
                 <div>
-                    <label class="block text-xs text-slate-400 mb-1 uppercase tracking-wider">Letzte 8 Sek. (Tonleiter)</label>
+                    <label class="block text-[11px] text-slate-300 mb-1 uppercase tracking-wider font-semibold">Letzte 8 Sek. (Tonleiter)</label>
                     <div class="flex gap-2">
-                        <select id="input-sound-8s" class="flex-grow bg-slate-800 text-white text-sm rounded-lg px-3 py-2.5 outline-none border border-slate-600 focus:border-violet-500 shadow-sm cursor-pointer"></select>
-                        <button id="btn-test-8s" class="bg-slate-700 hover:bg-slate-600 text-white px-3 rounded-lg border border-slate-600 flex justify-center items-center transition-colors" title="Testen">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        <select id="input-sound-8s" class="flex-grow bg-black/20 text-white text-sm rounded-xl px-4 py-3 outline-none border border-white/10 focus:border-emerald-400 shadow-inner cursor-pointer backdrop-blur-md"></select>
+                        <button id="btn-test-8s" class="ios-glass-btn text-white px-4 rounded-xl flex justify-center items-center" title="Testen">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                         </button>
                     </div>
                 </div>
 
                 <!-- Alarm -->
                 <div>
-                    <label class="block text-xs text-slate-400 mb-1 uppercase tracking-wider">Alarm (Ende)</label>
+                    <label class="block text-[11px] text-slate-300 mb-1 uppercase tracking-wider font-semibold">Alarm (Ende)</label>
                     <div class="flex gap-2">
-                        <select id="input-sound-alarm" class="flex-grow bg-slate-800 text-white text-sm rounded-lg px-3 py-2.5 outline-none border border-slate-600 focus:border-violet-500 shadow-sm cursor-pointer"></select>
-                        <button id="btn-test-alarm" class="bg-slate-700 hover:bg-slate-600 text-white px-3 rounded-lg border border-slate-600 flex justify-center items-center transition-colors" title="Testen">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        <select id="input-sound-alarm" class="flex-grow bg-black/20 text-white text-sm rounded-xl px-4 py-3 outline-none border border-white/10 focus:border-red-400 shadow-inner cursor-pointer backdrop-blur-md"></select>
+                        <button id="btn-test-alarm" class="ios-glass-btn text-white px-4 rounded-xl flex justify-center items-center" title="Testen">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                         </button>
                     </div>
                 </div>
             </div>
             
-            <div class="mt-6 flex justify-end">
-                <button id="btn-close-settings-bottom" class="bg-violet-600 hover:bg-violet-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors w-full border border-violet-500 shadow-lg">
+            <div class="mt-6">
+                <button id="btn-close-settings-bottom" class="w-full ios-glass-btn text-white py-3.5 rounded-xl text-sm font-bold">
                     Fertig
                 </button>
             </div>
@@ -251,7 +312,6 @@
     <script>
         // DOM Elements
         const timeDisplay = document.getElementById('time-display');
-        const smallTimers = document.querySelectorAll('.small-timer');
         const statusText = document.getElementById('status-text');
         
         const btnPlayPause = document.getElementById('btn-play-pause');
@@ -268,6 +328,7 @@
         const btnTestMin = document.getElementById('btn-test-min');
         
         const settingsPanel = document.getElementById('settings-panel');
+        const setupControls = document.getElementById('setup-controls');
         
         const uiMinVal = document.getElementById('ui-min-val');
         const uiSecVal = document.getElementById('ui-sec-val');
@@ -280,26 +341,24 @@
         const progressCircle = document.getElementById('progress-circle');
         const alarmOverlay = document.getElementById('alarm-overlay');
 
-        // Constants
         const CIRCUMFERENCE = 1005.3;
 
-        // New Buttons
         const btnSubMin = document.getElementById('btn-sub-min');
         const btnAddMin = document.getElementById('btn-add-min');
         const btnSubSec = document.getElementById('btn-sub-sec');
         const btnAddSec = document.getElementById('btn-add-sec');
         const btnsQuickSelect = document.querySelectorAll('.btn-quick-select');
 
-        // State Variables
-        let totalSeconds = 5 * 60; // Default 5 mins
+        let totalSeconds = 5 * 60;
         let remainingSeconds = totalSeconds;
         let exactRemainingMs = totalSeconds * 1000;
         let isRunning = false;
         let targetTime = 0;
         let settingsOpen = false;
         let isAlarming = false;
+        let alarmLoopId = null; // Neuer Timer-Tracker für den Endlos-Alarm
 
-        // --- AUDIO ENGINE (Synthesizer & Presets) ---
+        // --- AUDIO ENGINE ---
         let audioCtx = null;
         let activeAudioNodes = [];
 
@@ -329,7 +388,6 @@
             { name: "22. Sanftes Holz", type: "sine", freq: 400, dur: 0.08, vol: 0.4, slide: -100 }
         ];
 
-        // Populate Selects
         [selectMin, select30s, select8s, selectAlarm].forEach(select => {
             soundPresets.forEach((p, index) => {
                 const opt = document.createElement('option');
@@ -339,11 +397,10 @@
             });
         });
         
-        // Defaults
-        selectMin.value = 21; // Organische Glocke
-        select30s.value = 14; // Soft Bell
-        select8s.value = 1;  // Classic Tick
-        selectAlarm.value = 2; // Digital Beep
+        selectMin.value = 21; 
+        select30s.value = 14; 
+        select8s.value = 1;  
+        selectAlarm.value = 2; 
 
         function initAudio() {
             if (!audioCtx) {
@@ -383,7 +440,6 @@
                 osc.start(startTime);
                 osc.stop(startTime + (forceDur || p.dur));
 
-                // Node tracken, um ihn bei Display-Touch abbrechen zu können
                 activeAudioNodes.push(osc);
                 osc.onended = () => {
                     activeAudioNodes = activeAudioNodes.filter(n => n !== osc);
@@ -398,8 +454,6 @@
             activeAudioNodes = [];
         }
 
-        // --- TIMER LOGIC ---
-
         function formatTime(seconds) {
             const m = Math.floor(seconds / 60);
             const s = seconds % 60;
@@ -410,14 +464,11 @@
             };
         }
 
-        // 60FPS Visual Loop Updates
         function updateVisuals(exactSecondsLeft) {
             if (totalSeconds > 0) {
                 const fraction = exactSecondsLeft / totalSeconds;
                 const progress = Math.max(0, Math.min(1, 1 - fraction));
                 
-                // --- Background Bar Logic ---
-                // Color mapping: Emerald (16, 185, 129) -> Violet (139, 92, 246)
                 const r = Math.round(16 + (139 - 16) * progress);
                 const g = Math.round(185 + (92 - 185) * progress);
                 const b = Math.round(129 + (246 - 129) * progress);
@@ -425,7 +476,6 @@
                 bgProgressBar.style.height = `${progress * 100}%`;
                 bgProgressBar.style.setProperty('--dynamic-color', `rgba(${r}, ${g}, ${b}, 0.5)`);
 
-                // --- Circle Animation Logic ---
                 const offset = CIRCUMFERENCE - (fraction * CIRCUMFERENCE);
                 progressCircle.style.strokeDashoffset = offset;
             } else {
@@ -434,17 +484,14 @@
             }
         }
 
-        // Logical Tick (Updates text and triggers sounds only on integer changes)
         function handleSecondTick(currentSecond) {
             remainingSeconds = currentSecond;
             
             const t = formatTime(remainingSeconds);
             timeDisplay.textContent = t.str;
-            smallTimers.forEach(el => el.textContent = t.str);
             uiMinVal.textContent = t.m;
             uiSecVal.textContent = t.s;
 
-            // Color urgency of text
             timeDisplay.classList.remove('time-urgent');
             if (remainingSeconds === 0) {
                 timeDisplay.classList.remove('text-white');
@@ -457,14 +504,12 @@
                 timeDisplay.classList.add('text-white');
             }
 
-            // Sound Logic
             if (remainingSeconds % 60 === 0 && remainingSeconds !== totalSeconds && remainingSeconds > 0) {
                 playSynthPreset(selectMin.value);
             } else if (remainingSeconds === 30) {
                 playSynthPreset(select30s.value);
             } else if (remainingSeconds <= 8 && remainingSeconds > 0) {
-                // Volle Oktave C-Dur (8 Steps)
-                const step = 8 - remainingSeconds; // 0 bis 7
+                const step = 8 - remainingSeconds; 
                 const majorScale = [1, 1.125, 1.25, 1.333, 1.5, 1.666, 1.875, 2];
                 playSynthPreset(select8s.value, majorScale[step]);
             }
@@ -492,16 +537,38 @@
             requestAnimationFrame(timerFrame);
         }
 
+        // Steuert den endlosen Loop des Alarms
+        function triggerEndlessAlarm() {
+            if (!isAlarming) return;
+            
+            playSynthPreset(selectAlarm.value, 1, null, true);
+            
+            // Berechnet dynamisch die Dauer des gewählten Alarm-Clusters + Pause
+            const p = soundPresets[selectAlarm.value];
+            if (p && p.freq > 0) {
+                const gap = p.dur < 0.2 ? 0.2 : p.dur + 0.1;
+                const clusterDurationMs = (4 * gap * 1000) + 600; // 4 Wiederholungen + 600ms Pause
+                alarmLoopId = setTimeout(triggerEndlessAlarm, clusterDurationMs);
+            }
+        }
+
         function timerComplete() {
             isRunning = false;
             isAlarming = true;
             iconPlay.classList.remove('hidden');
             iconPause.classList.add('hidden');
-            statusText.textContent = "Tippen zum Stoppen!";
-            statusText.classList.replace('text-violet-400', 'text-red-400');
-            playSynthPreset(selectAlarm.value, 1, null, true);
             
-            // Endloses Flashen und Overlay aktivieren
+            // Alles wieder einblenden
+            setupControls.classList.remove('hidden');
+            btnReset.classList.remove('hidden');
+            btnSettings.classList.remove('hidden');
+            
+            statusText.textContent = "Tippen zum Stoppen!";
+            statusText.classList.replace('text-violet-300', 'text-red-400');
+            
+            // Startet den endlosen Alarm-Loop
+            triggerEndlessAlarm();
+            
             document.body.classList.add('alarm-active');
             alarmOverlay.classList.remove('hidden');
         }
@@ -511,8 +578,10 @@
             isAlarming = false;
             document.body.classList.remove('alarm-active');
             alarmOverlay.classList.add('hidden');
-            stopAllAudio(); // Garantiert, dass der Ton aufhört
-            resetTimer(); // Setzt alles sauber zurück
+            
+            clearTimeout(alarmLoopId); // Stoppt die zukünftigen Alarm-Wellen
+            stopAllAudio(); 
+            resetTimer(); 
         }
 
         alarmOverlay.addEventListener('click', stopAlarm);
@@ -526,7 +595,12 @@
             iconPlay.classList.add('hidden');
             iconPause.classList.remove('hidden');
             statusText.textContent = "Läuft...";
-            statusText.classList.replace('text-red-400', 'text-violet-400');
+            statusText.classList.replace('text-red-400', 'text-emerald-300');
+            
+            // Radikaler Fokus: Alles ausblenden außer Stop-Button
+            setupControls.classList.add('hidden');
+            btnReset.classList.add('hidden');
+            btnSettings.classList.add('hidden');
             
             requestAnimationFrame(timerFrame);
         }
@@ -535,8 +609,15 @@
             isRunning = false;
             iconPlay.classList.remove('hidden');
             iconPause.classList.add('hidden');
+            
+            // UI wieder einblenden
+            setupControls.classList.remove('hidden');
+            btnReset.classList.remove('hidden');
+            btnSettings.classList.remove('hidden');
+            
             if (exactRemainingMs > 0) {
                 statusText.textContent = "Pausiert";
+                statusText.classList.replace('text-emerald-300', 'text-violet-300');
             }
         }
 
@@ -550,7 +631,8 @@
             exactRemainingMs = totalSeconds * 1000;
             remainingSeconds = totalSeconds;
             statusText.textContent = "Bereit";
-            statusText.classList.replace('text-red-400', 'text-violet-400');
+            statusText.classList.replace('text-red-400', 'text-violet-300');
+            statusText.classList.replace('text-emerald-300', 'text-violet-300');
             
             handleSecondTick(totalSeconds);
             updateVisuals(totalSeconds);
@@ -559,7 +641,7 @@
         function adjustTime(seconds) {
             let newTotal = totalSeconds + seconds;
             if (newTotal < 1) newTotal = 1;
-            if (newTotal > 3600) newTotal = 3600; // Max 60 Min
+            if (newTotal > 3600) newTotal = 3600; 
             
             totalSeconds = newTotal;
             exactRemainingMs = totalSeconds * 1000;
@@ -590,11 +672,11 @@
                 updateVisuals(totalSeconds);
                 
                 statusText.textContent = "Bereit";
-                statusText.classList.replace('text-red-400', 'text-violet-400');
+                statusText.classList.replace('text-red-400', 'text-violet-300');
+                statusText.classList.replace('text-emerald-300', 'text-violet-300');
             });
         });
 
-        // Settings Logic
         function toggleSettings() {
             settingsOpen = !settingsOpen;
             if (settingsOpen) {
@@ -618,30 +700,17 @@
         btnCloseSettings.addEventListener('click', toggleSettings);
         btnCloseSettingsBottom.addEventListener('click', toggleSettings);
         
-        // Sound Tests
-        btnTestMin.addEventListener('click', () => {
-            playSynthPreset(selectMin.value);
-        });
-        
-        btnTest30s.addEventListener('click', () => {
-            playSynthPreset(select30s.value);
-        });
-        
+        btnTestMin.addEventListener('click', () => playSynthPreset(selectMin.value));
+        btnTest30s.addEventListener('click', () => playSynthPreset(select30s.value));
         btnTest8s.addEventListener('click', () => {
-            // Spielt eine kurze 3-Ton-Vorschau der 8er Skalierung ab
             playSynthPreset(select8s.value, 1);
             setTimeout(() => playSynthPreset(select8s.value, 1.125), 250);
             setTimeout(() => playSynthPreset(select8s.value, 1.25), 500);
         });
+        btnTestAlarm.addEventListener('click', () => playSynthPreset(selectAlarm.value, 1, null, true));
 
-        btnTestAlarm.addEventListener('click', () => {
-            playSynthPreset(selectAlarm.value, 1, null, true);
-        });
-
-        // Event listener for audio init on first interaction
         document.body.addEventListener('click', initAudio, { once: true });
 
-        // Globaler Touch/Click-Catcher für den abgelaufenen Timer
         document.body.addEventListener('click', (e) => {
             if (isAlarming) {
                 e.preventDefault();
@@ -650,7 +719,6 @@
             }
         }, { capture: true });
 
-        // Initial setup
         handleSecondTick(totalSeconds);
         updateVisuals(totalSeconds);
 
