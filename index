@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moderner Brettspiel Timer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; /* slate-900 */
+            color: #f8fafc; /* slate-50 */
+        }
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Neue Animation für die letzten 8 Sekunden */
+        @keyframes pulse-urgent {
+            0%, 100% { transform: scale(1); text-shadow: 0 0 10px rgba(239, 68, 68, 0); color: #f8fafc; }
+            50% { transform: scale(1.05); text-shadow: 0 0 30px rgba(239, 68, 68, 0.9); color: #ef4444; }
+        }
+        .time-urgent {
+            animation: pulse-urgent 1s infinite !important;
+        }
+        
+        /* End-Alarm Animationen (endlos) */
+        @keyframes flash-bg {
+            0%, 100% { background-color: #0f172a; } /* slate-900 */
+            50% { background-color: rgba(153, 27, 27, 0.4); } /* dunkles Rot */
+        }
+        .alarm-active {
+            animation: flash-bg 0.6s infinite !important;
+        }
+        
+        @keyframes pulse-alarm {
+            0%, 100% { transform: scale(1); text-shadow: 0 0 20px rgba(239, 68, 68, 0.8); color: #ef4444; }
+            50% { transform: scale(1.15); text-shadow: 0 0 50px rgba(239, 68, 68, 1); color: #f87171; }
+        }
+        .text-alarm-active {
+            animation: pulse-alarm 0.5s infinite !important;
+        }
+        
+        /* Einstellungen für Custom Select */
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 0.5rem center;
+            background-size: 1em;
+        }
+
+        /* Hintergrund Balken Animation */
+        #bg-progress-bar {
+            will-change: height, background-position;
+            background-image: linear-gradient(180deg, rgba(16, 185, 129, 0.1), var(--dynamic-color, rgba(139, 92, 246, 0.5)), rgba(16, 185, 129, 0.1));
+            background-size: 100% 200%;
+            animation: bg-shift 4s ease infinite;
+        }
+
+        @keyframes bg-shift {
+            0% { background-position: 50% 0%; }
+            50% { background-position: 50% 100%; }
+            100% { background-position: 50% 0%; }
+        }
+
+        /* Button Gradient Animation */
+        .animate-gradient-xy {
+            background-size: 200% 200%;
+            animation: gradient-xy 3s ease infinite;
+        }
+
+        @keyframes gradient-xy {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* SVG Circle Gradient Animation */
+        #stop1 {
+            animation: stop1-color 4s alternate infinite ease-in-out;
+        }
+        #stop2 {
+            animation: stop2-color 4s alternate infinite ease-in-out;
+        }
+        
+        @keyframes stop1-color {
+            0% { stop-color: #10b981; } /* emerald-500 */
+            100% { stop-color: #34d399; } /* emerald-400 (heller) */
+        }
+        @keyframes stop2-color {
+            0% { stop-color: #8b5cf6; } /* violet-500 */
+            100% { stop-color: #a78bfa; } /* violet-400 (heller) */
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 overflow-hidden relative">
+
+    <!-- Klick-Fänger für den End-Alarm (Muss über allem liegen) -->
+    <div id="alarm-overlay" class="fixed inset-0 z-50 hidden cursor-pointer" title="Zum Stoppen tippen"></div>
+
+    <!-- Hintergrund Balken Animation (Via JS in 60 FPS kontrolliert) -->
+    <div id="bg-progress-bar" class="fixed bottom-0 left-0 w-full z-[-1]" style="height: 0%;"></div>
+
+    <!-- Kleine Anzeigen für alle Tischseiten -->
+    <div class="fixed top-4 left-1/2 text-4xl font-mono text-slate-500/30 font-bold tracking-widest small-timer pointer-events-none" style="transform: translateX(-50%) rotate(180deg);">05:00</div>
+    <div class="fixed left-12 top-1/2 text-4xl font-mono text-slate-500/30 font-bold tracking-widest small-timer pointer-events-none" style="transform: translateY(-50%) rotate(90deg);">05:00</div>
+    <div class="fixed right-12 top-1/2 text-4xl font-mono text-slate-500/30 font-bold tracking-widest small-timer pointer-events-none" style="transform: translateY(-50%) rotate(-90deg);">05:00</div>
+
+    <main class="w-full max-w-md mx-auto flex flex-col items-center z-10 relative mt-4">
+        
+        <!-- Timer Display (Mit 60FPS Kreis-Animation in Grün-Lila) -->
+        <div class="relative w-[350px] h-[350px] mb-6 flex items-center justify-center">
+            <svg class="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 350 350">
+                <defs>
+                    <linearGradient id="circle-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop id="stop1" offset="0%" stop-color="#10b981" /> <!-- Animiert -->
+                        <stop id="stop2" offset="100%" stop-color="#8b5cf6" /> <!-- Animiert -->
+                    </linearGradient>
+                </defs>
+                <circle id="progress-circle" cx="175" cy="175" r="160" stroke="url(#circle-gradient)" stroke-width="12" fill="transparent" 
+                        stroke-dasharray="1005.3" stroke-dashoffset="0" stroke-linecap="round"></circle>
+            </svg>
+
+            <div class="relative z-10 flex flex-col items-center mt-4">
+                <div id="time-display" class="text-[5.5rem] leading-none font-mono font-bold text-white tracking-tight drop-shadow-lg">
+                    05:00
+                </div>
+                <div id="status-text" class="text-violet-400 text-base font-medium mt-6 uppercase tracking-widest">
+                    Bereit
+                </div>
+            </div>
+        </div>
+
+        <!-- Schnellwahl und +/- Buttons -->
+        <div class="flex flex-col items-center w-full max-w-sm mb-10">
+            <div class="flex gap-6 w-full justify-center mb-6">
+                <!-- Minuten Block -->
+                <div class="flex flex-col items-center">
+                    <span class="text-xs text-slate-400 mb-2 uppercase tracking-wider font-semibold">Minuten</span>
+                    <div class="flex items-center bg-slate-800/80 p-1.5 rounded-xl border border-slate-700 shadow-inner">
+                        <button id="btn-sub-min" class="w-12 h-12 flex items-center justify-center bg-slate-700/50 rounded-lg hover:bg-slate-600 active:scale-95 text-2xl font-bold text-slate-200 transition-all">-</button>
+                        <span id="ui-min-val" class="w-16 text-center font-mono text-3xl font-bold text-white">05</span>
+                        <button id="btn-add-min" class="w-12 h-12 flex items-center justify-center bg-slate-700/50 rounded-lg hover:bg-slate-600 active:scale-95 text-2xl font-bold text-slate-200 transition-all">+</button>
+                    </div>
+                </div>
+
+                <!-- Sekunden Block -->
+                <div class="flex flex-col items-center">
+                    <span class="text-xs text-slate-400 mb-2 uppercase tracking-wider font-semibold">Sekunden</span>
+                    <div class="flex items-center bg-slate-800/80 p-1.5 rounded-xl border border-slate-700 shadow-inner">
+                        <button id="btn-sub-sec" class="w-12 h-12 flex items-center justify-center bg-slate-700/50 rounded-lg hover:bg-slate-600 active:scale-95 text-2xl font-bold text-slate-200 transition-all">-</button>
+                        <span id="ui-sec-val" class="w-16 text-center font-mono text-3xl font-bold text-white">00</span>
+                        <button id="btn-add-sec" class="w-12 h-12 flex items-center justify-center bg-slate-700/50 rounded-lg hover:bg-slate-600 active:scale-95 text-2xl font-bold text-slate-200 transition-all">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-2 w-full justify-center text-sm font-medium px-4">
+                <button data-mins="1" class="btn-quick-select flex-1 py-2 bg-emerald-900/30 text-emerald-300 rounded-lg border border-emerald-800/50 hover:bg-emerald-800/80 transition-all shadow-sm">1 Min</button>
+                <button data-mins="3" class="btn-quick-select flex-1 py-2 bg-violet-900/30 text-violet-300 rounded-lg border border-violet-800/50 hover:bg-violet-800/80 transition-all shadow-sm">3 Min</button>
+                <button data-mins="5" class="btn-quick-select flex-1 py-2 bg-emerald-900/30 text-emerald-300 rounded-lg border border-emerald-800/50 hover:bg-emerald-800/80 transition-all shadow-sm">5 Min</button>
+            </div>
+        </div>
+
+        <div class="flex gap-6 mb-8">
+            <button id="btn-reset" class="w-16 h-16 rounded-full glass-panel flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-700 transition-all active:scale-95 shadow-lg" title="Zurücksetzen">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            </button>
+            <button id="btn-play-pause" class="w-24 h-24 rounded-full bg-gradient-to-tr from-emerald-500 via-teal-500 to-violet-600 animate-gradient-xy flex items-center justify-center text-white shadow-[0_0_25px_rgba(139,92,246,0.4)] hover:shadow-[0_0_35px_rgba(139,92,246,0.6)] hover:scale-105 transition-all active:scale-95">
+                <!-- Play Icon (Default) -->
+                <svg id="icon-play" xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                <!-- Pause Icon (Hidden) -->
+                <svg id="icon-pause" xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+            </button>
+            <button id="btn-settings" class="w-16 h-16 rounded-full glass-panel flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-700 transition-all active:scale-95 shadow-lg" title="Sound Einstellungen">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+            </button>
+        </div>
+
+        <div id="settings-panel" class="absolute bottom-24 w-full max-w-sm glass-panel rounded-2xl p-6 transition-all duration-300 overflow-hidden hidden opacity-0 shadow-2xl z-20 border-violet-500/30 border">
+            <h2 class="text-xl font-semibold mb-4 border-b border-slate-700 pb-2 flex items-center justify-between">
+                <span>Sound Einstellungen</span>
+                <button id="btn-close-settings" class="text-slate-400 hover:text-white p-1 rounded-full hover:bg-slate-700 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </h2>
+            
+            <div class="flex flex-col gap-4">
+                <!-- Jede Minute -->
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1 uppercase tracking-wider">Jede volle Minute</label>
+                    <div class="flex gap-2">
+                        <select id="input-sound-min" class="flex-grow bg-slate-800 text-white text-sm rounded-lg px-3 py-2.5 outline-none border border-slate-600 focus:border-violet-500 shadow-sm cursor-pointer"></select>
+                        <button id="btn-test-min" class="bg-slate-700 hover:bg-slate-600 text-white px-3 rounded-lg border border-slate-600 flex justify-center items-center transition-colors" title="Testen">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 30s Warning -->
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1 uppercase tracking-wider">Bei 30 Sekunden</label>
+                    <div class="flex gap-2">
+                        <select id="input-sound-30s" class="flex-grow bg-slate-800 text-white text-sm rounded-lg px-3 py-2.5 outline-none border border-slate-600 focus:border-violet-500 shadow-sm cursor-pointer"></select>
+                        <button id="btn-test-30s" class="bg-slate-700 hover:bg-slate-600 text-white px-3 rounded-lg border border-slate-600 flex justify-center items-center transition-colors" title="Testen">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 8s Warning -->
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1 uppercase tracking-wider">Letzte 8 Sek. (Tonleiter)</label>
+                    <div class="flex gap-2">
+                        <select id="input-sound-8s" class="flex-grow bg-slate-800 text-white text-sm rounded-lg px-3 py-2.5 outline-none border border-slate-600 focus:border-violet-500 shadow-sm cursor-pointer"></select>
+                        <button id="btn-test-8s" class="bg-slate-700 hover:bg-slate-600 text-white px-3 rounded-lg border border-slate-600 flex justify-center items-center transition-colors" title="Testen">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Alarm -->
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1 uppercase tracking-wider">Alarm (Ende)</label>
+                    <div class="flex gap-2">
+                        <select id="input-sound-alarm" class="flex-grow bg-slate-800 text-white text-sm rounded-lg px-3 py-2.5 outline-none border border-slate-600 focus:border-violet-500 shadow-sm cursor-pointer"></select>
+                        <button id="btn-test-alarm" class="bg-slate-700 hover:bg-slate-600 text-white px-3 rounded-lg border border-slate-600 flex justify-center items-center transition-colors" title="Testen">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-6 flex justify-end">
+                <button id="btn-close-settings-bottom" class="bg-violet-600 hover:bg-violet-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors w-full border border-violet-500 shadow-lg">
+                    Fertig
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // DOM Elements
+        const timeDisplay = document.getElementById('time-display');
+        const smallTimers = document.querySelectorAll('.small-timer');
+        const statusText = document.getElementById('status-text');
+        
+        const btnPlayPause = document.getElementById('btn-play-pause');
+        const iconPlay = document.getElementById('icon-play');
+        const iconPause = document.getElementById('icon-pause');
+        const btnReset = document.getElementById('btn-reset');
+        const btnSettings = document.getElementById('btn-settings');
+        const btnCloseSettings = document.getElementById('btn-close-settings');
+        const btnCloseSettingsBottom = document.getElementById('btn-close-settings-bottom');
+        
+        const btnTest30s = document.getElementById('btn-test-30s');
+        const btnTest8s = document.getElementById('btn-test-8s');
+        const btnTestAlarm = document.getElementById('btn-test-alarm');
+        const btnTestMin = document.getElementById('btn-test-min');
+        
+        const settingsPanel = document.getElementById('settings-panel');
+        
+        const uiMinVal = document.getElementById('ui-min-val');
+        const uiSecVal = document.getElementById('ui-sec-val');
+        
+        const select30s = document.getElementById('input-sound-30s');
+        const select8s = document.getElementById('input-sound-8s');
+        const selectAlarm = document.getElementById('input-sound-alarm');
+        const selectMin = document.getElementById('input-sound-min');
+        const bgProgressBar = document.getElementById('bg-progress-bar');
+        const progressCircle = document.getElementById('progress-circle');
+        const alarmOverlay = document.getElementById('alarm-overlay');
+
+        // Constants
+        const CIRCUMFERENCE = 1005.3;
+
+        // New Buttons
+        const btnSubMin = document.getElementById('btn-sub-min');
+        const btnAddMin = document.getElementById('btn-add-min');
+        const btnSubSec = document.getElementById('btn-sub-sec');
+        const btnAddSec = document.getElementById('btn-add-sec');
+        const btnsQuickSelect = document.querySelectorAll('.btn-quick-select');
+
+        // State Variables
+        let totalSeconds = 5 * 60; // Default 5 mins
+        let remainingSeconds = totalSeconds;
+        let exactRemainingMs = totalSeconds * 1000;
+        let isRunning = false;
+        let targetTime = 0;
+        let settingsOpen = false;
+        let isAlarming = false;
+
+        // --- AUDIO ENGINE (Synthesizer & Presets) ---
+        let audioCtx = null;
+        let activeAudioNodes = [];
+
+        const soundPresets = [
+            { name: "Kein Ton", type: "sine", freq: 0, dur: 0, vol: 0 },
+            { name: "01. Classic Tick", type: "square", freq: 800, dur: 0.05, vol: 0.1 },
+            { name: "02. Digital Beep", type: "triangle", freq: 600, dur: 0.1, vol: 0.3 },
+            { name: "03. Buzzer", type: "sawtooth", freq: 150, dur: 0.4, vol: 0.4 },
+            { name: "04. Pluck", type: "sawtooth", freq: 400, dur: 0.1, vol: 0.2 },
+            { name: "05. Laser", type: "sawtooth", freq: 1200, dur: 0.15, vol: 0.2, slide: -800 },
+            { name: "06. Chime (Glocke)", type: "sine", freq: 1200, dur: 0.5, vol: 0.4 },
+            { name: "07. Retro Coin", type: "square", freq: 1000, dur: 0.15, vol: 0.2, slide: 500 },
+            { name: "08. Woodblock", type: "triangle", freq: 800, dur: 0.03, vol: 0.4 },
+            { name: "09. Crystal", type: "sine", freq: 2000, dur: 0.3, vol: 0.2 },
+            { name: "10. Sci-Fi Sweep", type: "square", freq: 400, dur: 0.2, vol: 0.2, slide: 400 },
+            { name: "11. Low Drone", type: "square", freq: 100, dur: 0.4, vol: 0.4 },
+            { name: "12. Sharp Click", type: "triangle", freq: 2500, dur: 0.02, vol: 0.2 },
+            { name: "13. Arcade", type: "square", freq: 500, dur: 0.15, vol: 0.2, slide: -100 },
+            { name: "14. Soft Bell", type: "sine", freq: 600, dur: 0.4, vol: 0.3 },
+            { name: "15. Tech Alert", type: "sawtooth", freq: 1500, dur: 0.1, vol: 0.2 },
+            { name: "16. Space Drop", type: "sine", freq: 800, dur: 0.2, vol: 0.3, slide: -600 },
+            { name: "17. Alien", type: "square", freq: 300, dur: 0.3, vol: 0.2, slide: 600 },
+            { name: "18. Warning Sirene", type: "triangle", freq: 700, dur: 0.4, vol: 0.3, slide: 200 },
+            { name: "19. Glass Hit", type: "sine", freq: 1800, dur: 0.05, vol: 0.3 },
+            { name: "20. Sub Kick", type: "sine", freq: 150, dur: 0.2, vol: 0.5, slide: -100 },
+            { name: "21. Organische Glocke", type: "sine", freq: 880, dur: 0.8, vol: 0.3 },
+            { name: "22. Sanftes Holz", type: "sine", freq: 400, dur: 0.08, vol: 0.4, slide: -100 }
+        ];
+
+        // Populate Selects
+        [selectMin, select30s, select8s, selectAlarm].forEach(select => {
+            soundPresets.forEach((p, index) => {
+                const opt = document.createElement('option');
+                opt.value = index;
+                opt.textContent = p.name;
+                select.appendChild(opt);
+            });
+        });
+        
+        // Defaults
+        selectMin.value = 21; // Organische Glocke
+        select30s.value = 14; // Soft Bell
+        select8s.value = 1;  // Classic Tick
+        selectAlarm.value = 2; // Digital Beep
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playSynthPreset(index, freqMultiplier = 1, forceDur = null, isAlarm = false) {
+            initAudio();
+            const p = soundPresets[index];
+            if (!p || p.freq === 0) return;
+
+            const repetitions = isAlarm ? 4 : 1;
+            const gap = isAlarm ? (p.dur < 0.2 ? 0.2 : p.dur + 0.1) : 0;
+
+            for (let i = 0; i < repetitions; i++) {
+                const startTime = audioCtx.currentTime + (i * gap);
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.type = p.type;
+                const baseFreq = p.freq * freqMultiplier;
+                
+                osc.frequency.setValueAtTime(baseFreq, startTime);
+                if (p.slide) {
+                    osc.frequency.linearRampToValueAtTime(baseFreq + p.slide, startTime + p.dur);
+                }
+                
+                gain.gain.setValueAtTime(0, startTime);
+                gain.gain.linearRampToValueAtTime(p.vol, startTime + 0.005);
+                gain.gain.exponentialRampToValueAtTime(0.001, startTime + (forceDur || p.dur));
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.start(startTime);
+                osc.stop(startTime + (forceDur || p.dur));
+
+                // Node tracken, um ihn bei Display-Touch abbrechen zu können
+                activeAudioNodes.push(osc);
+                osc.onended = () => {
+                    activeAudioNodes = activeAudioNodes.filter(n => n !== osc);
+                };
+            }
+        }
+
+        function stopAllAudio() {
+            activeAudioNodes.forEach(osc => {
+                try { osc.stop(); } catch(e) {}
+            });
+            activeAudioNodes = [];
+        }
+
+        // --- TIMER LOGIC ---
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            return {
+                str: `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`,
+                m: m.toString().padStart(2, '0'),
+                s: s.toString().padStart(2, '0')
+            };
+        }
+
+        // 60FPS Visual Loop Updates
+        function updateVisuals(exactSecondsLeft) {
+            if (totalSeconds > 0) {
+                const fraction = exactSecondsLeft / totalSeconds;
+                const progress = Math.max(0, Math.min(1, 1 - fraction));
+                
+                // --- Background Bar Logic ---
+                // Color mapping: Emerald (16, 185, 129) -> Violet (139, 92, 246)
+                const r = Math.round(16 + (139 - 16) * progress);
+                const g = Math.round(185 + (92 - 185) * progress);
+                const b = Math.round(129 + (246 - 129) * progress);
+
+                bgProgressBar.style.height = `${progress * 100}%`;
+                bgProgressBar.style.setProperty('--dynamic-color', `rgba(${r}, ${g}, ${b}, 0.5)`);
+
+                // --- Circle Animation Logic ---
+                const offset = CIRCUMFERENCE - (fraction * CIRCUMFERENCE);
+                progressCircle.style.strokeDashoffset = offset;
+            } else {
+                bgProgressBar.style.height = `0%`;
+                progressCircle.style.strokeDashoffset = CIRCUMFERENCE;
+            }
+        }
+
+        // Logical Tick (Updates text and triggers sounds only on integer changes)
+        function handleSecondTick(currentSecond) {
+            remainingSeconds = currentSecond;
+            
+            const t = formatTime(remainingSeconds);
+            timeDisplay.textContent = t.str;
+            smallTimers.forEach(el => el.textContent = t.str);
+            uiMinVal.textContent = t.m;
+            uiSecVal.textContent = t.s;
+
+            // Color urgency of text
+            timeDisplay.classList.remove('time-urgent');
+            if (remainingSeconds === 0) {
+                timeDisplay.classList.remove('text-white');
+                timeDisplay.classList.add('text-red-400');
+            } else if (remainingSeconds <= 8 && totalSeconds > 8) {
+                timeDisplay.classList.remove('text-white', 'text-red-400');
+                timeDisplay.classList.add('time-urgent');
+            } else {
+                timeDisplay.classList.remove('text-red-400');
+                timeDisplay.classList.add('text-white');
+            }
+
+            // Sound Logic
+            if (remainingSeconds % 60 === 0 && remainingSeconds !== totalSeconds && remainingSeconds > 0) {
+                playSynthPreset(selectMin.value);
+            } else if (remainingSeconds === 30) {
+                playSynthPreset(select30s.value);
+            } else if (remainingSeconds <= 8 && remainingSeconds > 0) {
+                // Volle Oktave C-Dur (8 Steps)
+                const step = 8 - remainingSeconds; // 0 bis 7
+                const majorScale = [1, 1.125, 1.25, 1.333, 1.5, 1.666, 1.875, 2];
+                playSynthPreset(select8s.value, majorScale[step]);
+            }
+        }
+
+        function timerFrame() {
+            if (!isRunning) return;
+            
+            exactRemainingMs = targetTime - Date.now();
+
+            if (exactRemainingMs <= 0) {
+                exactRemainingMs = 0;
+                handleSecondTick(0);
+                updateVisuals(0);
+                timerComplete();
+                return;
+            }
+
+            const currentSecond = Math.ceil(exactRemainingMs / 1000);
+            if (currentSecond !== remainingSeconds) {
+                handleSecondTick(currentSecond);
+            }
+
+            updateVisuals(exactRemainingMs / 1000);
+            requestAnimationFrame(timerFrame);
+        }
+
+        function timerComplete() {
+            isRunning = false;
+            isAlarming = true;
+            iconPlay.classList.remove('hidden');
+            iconPause.classList.add('hidden');
+            statusText.textContent = "Tippen zum Stoppen!";
+            statusText.classList.replace('text-violet-400', 'text-red-400');
+            playSynthPreset(selectAlarm.value, 1, null, true);
+            
+            // Endloses Flashen und Overlay aktivieren
+            document.body.classList.add('alarm-active');
+            alarmOverlay.classList.remove('hidden');
+        }
+
+        function stopAlarm() {
+            if (!isAlarming) return;
+            isAlarming = false;
+            document.body.classList.remove('alarm-active');
+            alarmOverlay.classList.add('hidden');
+            stopAllAudio(); // Garantiert, dass der Ton aufhört
+            resetTimer(); // Setzt alles sauber zurück
+        }
+
+        alarmOverlay.addEventListener('click', stopAlarm);
+
+        function startTimer() {
+            if (exactRemainingMs <= 0) return;
+            initAudio(); 
+            isRunning = true;
+            targetTime = Date.now() + exactRemainingMs;
+            
+            iconPlay.classList.add('hidden');
+            iconPause.classList.remove('hidden');
+            statusText.textContent = "Läuft...";
+            statusText.classList.replace('text-red-400', 'text-violet-400');
+            
+            requestAnimationFrame(timerFrame);
+        }
+
+        function pauseTimer() {
+            isRunning = false;
+            iconPlay.classList.remove('hidden');
+            iconPause.classList.add('hidden');
+            if (exactRemainingMs > 0) {
+                statusText.textContent = "Pausiert";
+            }
+        }
+
+        function toggleTimer() {
+            if (isRunning) pauseTimer();
+            else startTimer();
+        }
+
+        function resetTimer() {
+            pauseTimer();
+            exactRemainingMs = totalSeconds * 1000;
+            remainingSeconds = totalSeconds;
+            statusText.textContent = "Bereit";
+            statusText.classList.replace('text-red-400', 'text-violet-400');
+            
+            handleSecondTick(totalSeconds);
+            updateVisuals(totalSeconds);
+        }
+
+        function adjustTime(seconds) {
+            let newTotal = totalSeconds + seconds;
+            if (newTotal < 1) newTotal = 1;
+            if (newTotal > 3600) newTotal = 3600; // Max 60 Min
+            
+            totalSeconds = newTotal;
+            exactRemainingMs = totalSeconds * 1000;
+            remainingSeconds = totalSeconds;
+            
+            if (isRunning) {
+                targetTime = Date.now() + exactRemainingMs;
+            } else {
+                handleSecondTick(totalSeconds);
+                updateVisuals(totalSeconds);
+            }
+        }
+
+        btnSubMin.addEventListener('click', () => adjustTime(-60));
+        btnAddMin.addEventListener('click', () => adjustTime(60));
+        btnSubSec.addEventListener('click', () => adjustTime(-10));
+        btnAddSec.addEventListener('click', () => adjustTime(10));
+
+        btnsQuickSelect.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                pauseTimer();
+                const mins = parseInt(e.target.dataset.mins);
+                totalSeconds = mins * 60;
+                exactRemainingMs = totalSeconds * 1000;
+                remainingSeconds = totalSeconds;
+                
+                handleSecondTick(totalSeconds);
+                updateVisuals(totalSeconds);
+                
+                statusText.textContent = "Bereit";
+                statusText.classList.replace('text-red-400', 'text-violet-400');
+            });
+        });
+
+        // Settings Logic
+        function toggleSettings() {
+            settingsOpen = !settingsOpen;
+            if (settingsOpen) {
+                settingsPanel.classList.remove('hidden');
+                setTimeout(() => {
+                    settingsPanel.classList.remove('opacity-0');
+                    settingsPanel.classList.add('opacity-100');
+                }, 10);
+            } else {
+                settingsPanel.classList.remove('opacity-100');
+                settingsPanel.classList.add('opacity-0');
+                setTimeout(() => {
+                    settingsPanel.classList.add('hidden');
+                }, 300);
+            }
+        }
+
+        btnPlayPause.addEventListener('click', toggleTimer);
+        btnReset.addEventListener('click', resetTimer);
+        btnSettings.addEventListener('click', toggleSettings);
+        btnCloseSettings.addEventListener('click', toggleSettings);
+        btnCloseSettingsBottom.addEventListener('click', toggleSettings);
+        
+        // Sound Tests
+        btnTestMin.addEventListener('click', () => {
+            playSynthPreset(selectMin.value);
+        });
+        
+        btnTest30s.addEventListener('click', () => {
+            playSynthPreset(select30s.value);
+        });
+        
+        btnTest8s.addEventListener('click', () => {
+            // Spielt eine kurze 3-Ton-Vorschau der 8er Skalierung ab
+            playSynthPreset(select8s.value, 1);
+            setTimeout(() => playSynthPreset(select8s.value, 1.125), 250);
+            setTimeout(() => playSynthPreset(select8s.value, 1.25), 500);
+        });
+
+        btnTestAlarm.addEventListener('click', () => {
+            playSynthPreset(selectAlarm.value, 1, null, true);
+        });
+
+        // Event listener for audio init on first interaction
+        document.body.addEventListener('click', initAudio, { once: true });
+
+        // Globaler Touch/Click-Catcher für den abgelaufenen Timer
+        document.body.addEventListener('click', (e) => {
+            if (isAlarming) {
+                e.preventDefault();
+                e.stopPropagation();
+                stopAlarm();
+            }
+        }, { capture: true });
+
+        // Initial setup
+        handleSecondTick(totalSeconds);
+        updateVisuals(totalSeconds);
+
+    </script>
+</body>
+</html>
